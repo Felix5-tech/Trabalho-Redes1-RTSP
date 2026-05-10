@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Mastering RTSP - Technical Guide</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; margin: 0; }
+        aside { width: 250px; background: var(--card-bg); height: 100vh; position: sticky; top: 0; padding: 20px; border-right: 1px solid #334155; }
+        aside a { display: block; color: #94a3b8; text-decoration: none; padding: 10px; border-radius: 5px; margin-bottom: 5px; }
+        aside a:hover { background: var(--primary); color: white; }
+        main { flex: 1; padding: 40px; max-width: 800px; }
+        .badge { background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; }
+        section { margin-bottom: 60px; line-height: 1.8; }
+        h1 { font-size: 2.5em; color: white; }
+        h2 { border-left: 4px solid var(--primary); padding-left: 15px; color: #cbd5e1; }
+        .method { background: #334155; padding: 15px; border-radius: 8px; font-family: monospace; color: #38bdf8; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; color: var(--primary); border-bottom: 2px solid #334155; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #334155; }
+    </style>
+</head>
+<body>
+
+<aside>
+    <h3>Conteúdo</h3>
+    <a href="#sec1">Introdução</a>
+    <a href="#sec2">História</a>
+    <a href="#sec3">Características</a>
+    <a href="#sec4">Arquitetura</a>
+    <a href="#sec5">Aplicações</a>
+    <a href="#sec6">Futuro</a>
+    <a href="#sec8">FAQ</a>
+</aside>
+
+<main>
+    <section id="sec1">
+        <span class="badge">RFC 2326</span>
+        <h1>Protocolo RTSP</h1>
+        <p>O RTSP funciona como uma interface de controle para fluxos de mídia. Imagine-o como o "braço" que opera um leitor de DVD remoto, enquanto o RTP é o "cabo" que envia o sinal de vídeo.</p>
+    </section>
+
+    <section id="sec2">
+        <h2>História e Evolução</h2>
+        <p>Desenvolvido no final dos anos 90, o RTSP foi a resposta à necessidade de streaming controlado. Enquanto o <strong>FTP</strong> baixava arquivos inteiros e o <strong>HTTP 1.0</strong> era estático, o RTSP permitiu a "busca" (seek) dentro de um arquivo de vídeo sem precisar baixá-lo por completo.</p>
+    </section>
+
+    <section id="sec3">
+        <h2>Características & Métodos</h2>
+        <div class="method">SETUP: Estabelece o transporte (ex: UDP/RTP)</div>
+        <div class="method">PLAY: Inicia a entrega dos dados</div>
+        <div class="method">PAUSE: Congela o fluxo de dados temporariamente</div>
+        <div class="method">TEARDOWN: Encerra a sessão e libera a banda</div>
+    </section>
+
+    <section id="sec4">
+        <h2>Arquitetura de Camadas</h2>
+        <p>O RTSP reside na camada de <strong>Aplicação</strong>. Ele negocia parâmetros que influenciam a camada de <strong>Transporte</strong>. Se o cliente está atrás de um firewall restritivo, o RTSP pode decidir "encapsular" (tunneling) os dados via TCP em vez de usar portas UDP dinâmicas.</p>
+    </section>
+
+    <section id="sec5">
+        <h2>Matriz de Performance</h2>
+        <table>
+            <tr><th>Tipo de Pacote</th><th>Latência</th><th>Uso de Banda</th></tr>
+            <tr><td>UDP (Unicast)</td><td>Baixíssima</td><td>Eficiente</td></tr>
+            <tr><td>TCP (Interleaved)</td><td>Média</td><td>Alta (Overhead)</td></tr>
+            <tr><td>Multicast</td><td>Baixíssima</td><td>Excelente (Rede Local)</td></tr>
+        </table>
+    </section>
+
+    <section id="sec6">
+        <h2>Desafios e o Amanhã</h2>
+        <p>O grande desafio é a compatibilidade com a Web (Browsers). O futuro do RTSP está no seu uso híbrido com <strong>WebRTC</strong> para aplicações que exigem latência sub-segundo, onde o HLS (HTTP) falha por ter atrasos de 2 a 30 segundos.</p>
+    </section>
+
+    <section id="sec8">
+        <h2>Perguntas Frequentes</h2>
+        <details>
+            <summary><strong>O RTSP é seguro?</strong></summary>
+            <p>Nativamente não, mas pode ser implementado sobre TLS (RTSPS) para garantir criptografia e autenticação.</p>
+        </details>
+    </section>
+</main>
+
+</body>
+</html>

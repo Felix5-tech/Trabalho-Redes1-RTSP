@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Estudo sobre Protocolos de Mídia: RTSP</title>
+    <style>
+        body { font-family: 'Georgia', serif; color: #222; max-width: 750px; margin: 40px auto; padding: 20px; line-height: 1.6; background: #fffaf5; }
+        .paper-header { text-align: center; border-bottom: 2px double #888; margin-bottom: 40px; padding-bottom: 20px; }
+        h2 { font-variant: small-caps; color: #444; margin-top: 40px; border-bottom: 1px solid #ddd; }
+        .abstract { font-style: italic; background: #eee; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .footer-notes { font-size: 0.85em; color: #666; margin-top: 50px; border-top: 1px solid #ccc; padding-top: 20px; }
+        ul.no-bullets { list-style-type: none; padding-left: 0; }
+        .q-box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; background: white; }
+    </style>
+</head>
+<body>
+
+<div class="paper-header">
+    <h1>Análise do Protocolo de Controle de Transmissão em Tempo Real (RTSP)</h1>
+    <p>Autor: Sistema Inteligente | Disciplina: Redes de Computadores</p>
+</div>
+
+<div class="abstract">
+    <strong>Resumo:</strong> Este documento explora o RTSP, um protocolo essencial para a manipulação de fluxos de mídia, detalhando sua história, arquitetura stateful e o cenário de transição para tecnologias baseadas em HTTP.
+</div>
+
+<h2>1. Introdução</h2>
+<p>O controle de mídia em redes IP exige mais do que apenas a entrega de pacotes; exige orquestração. O RTSP (RFC 2326) provê essa lógica, permitindo que servidores e clientes negociem tempos, codecs e pontos de sincronia.</p>
+
+<h2>2. Contexto Histórico</h2>
+<p>Diferente do RTMP (proprietário da Adobe), o RTSP nasceu como um padrão aberto. Na época de seu lançamento, superou as limitações do HTTP 1.0, que não permitia a persistência de conexão necessária para um fluxo de vídeo contínuo.</p>
+
+<h2>3. Características e Estados</h2>
+<p>O protocolo opera em quatro estados principais:</p>
+<ul class="no-bullets">
+    <li>• <strong>Iniciação:</strong> Negociação de parâmetros.</li>
+    <li>• <strong>Pronto:</strong> Alocação de buffers no servidor.</li>
+    <li>• <strong>Execução:</strong> Transporte ativo de dados.</li>
+    <li>• <strong>Finalizado:</strong> Desalocação de portas.</li>
+</ul>
+
+<h2>4. Aplicações e Performance</h2>
+<p>Em câmeras de vigilância, o RTSP é preferido devido à baixa latência. A escolha do transporte (UDP vs TCP) define a qualidade: UDP prioriza o tempo (ignora erros), enquanto TCP prioriza a integridade (retransmite pacotes perdidos, aumentando o atraso).</p>
+
+<h2>5. Desafios e Conclusão</h2>
+<p>O principal desafio reside no "atravessamento de NAT" e firewalls, que frequentemente bloqueiam as portas dinâmicas do RTSP. Contudo, seu impacto foi vital para o desenvolvimento do SIP (Telefonia IP) e outros protocolos modernos.</p>
+
+<h2>6. Sessão de Perguntas</h2>
+<div class="q-box">
+    <strong>Pergunta:</strong> Qual a diferença entre RTSP e RTP?<br>
+    <strong>Resposta:</strong> O RTSP é o controle (play/pause), enquanto o RTP é o portador (os dados do vídeo em si).
+</div>
+
+<div class="footer-notes">
+    <h3>Bibliografia</h3>
+    <p>[1] IETF, RFC 2326 - Real Time Streaming Protocol.<br>
+    [2] Peterson & Davie, Computer Networks: A Systems Approach.</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTSP — Real Time Streaming Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a3a;
+    --accent: #00e5ff;
+    --accent2: #ff4d6d;
+    --accent3: #a8ff78;
+    --text: #e8e8f0;
+    --muted: #888899;
+    --heading: #ffffff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* ── SIDEBAR NAV ── */
+  nav {
+    position: fixed;
+    left: 0; top: 0;
+    height: 100vh;
+    width: 220px;
+    background: #0d0d14;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 40px 0 32px;
+    z-index: 100;
+  }
+
+  nav .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    padding: 0 28px 32px;
+    border-bottom: 1px solid var(--border);
+    line-height: 1;
+  }
+
+  nav .logo span { color: var(--accent2); }
+
+  nav ul {
+    list-style: none;
+    margin-top: 24px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  nav ul li a {
+    display: block;
+    padding: 10px 28px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s, background 0.2s;
+    border-left: 2px solid transparent;
+  }
+
+  nav ul li a:hover, nav ul li a.active {
+    color: var(--accent);
+    background: rgba(0,229,255,0.05);
+    border-left-color: var(--accent);
+  }
+
+  nav .version {
+    padding: 0 28px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  /* ── MAIN ── */
+  main {
+    margin-left: 220px;
+    padding: 0 60px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    padding: 80px 0 60px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 9vw, 8rem);
+    line-height: 0.92;
+    color: var(--heading);
+    letter-spacing: 0.04em;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  .hero h1 em {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  .hero-sub {
+    max-width: 560px;
+    margin-top: 28px;
+    color: var(--muted);
+    font-size: 1.05rem;
+    font-weight: 300;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 40px;
+    margin-top: 48px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .meta-item { display: flex; flex-direction: column; gap: 4px; }
+
+  .meta-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .meta-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--accent3);
+    font-weight: 600;
+  }
+
+  .hero-bg-text {
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(8rem, 18vw, 18rem);
+    color: rgba(0,229,255,0.03);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 80px 0 60px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .section-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-tag::after {
+    content: '';
+    flex: 0 0 40px;
+    height: 1px;
+    background: var(--accent2);
+    opacity: 0.5;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    color: var(--heading);
+    line-height: 1.15;
+    margin-bottom: 32px;
+  }
+
+  h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--heading);
+    margin: 40px 0 16px;
+  }
+
+  h3 em {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  p { margin-bottom: 18px; color: var(--text); font-weight: 300; }
+
+  p strong { color: var(--heading); font-weight: 600; }
+
+  /* ── CARDS ── */
+  .card-grid {
+    display: grid;
+    gap: 20px;
+    margin: 32px 0;
+  }
+
+  .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    transition: border-color 0.25s, transform 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover {
+    border-color: rgba(0,229,255,0.3);
+    transform: translateY(-3px);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .card h4 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    color: var(--heading);
+    margin-bottom: 10px;
+  }
+
+  .card p { font-size: 0.9rem; margin-bottom: 0; }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.9;
+    overflow-x: auto;
+  }
+
+  .code-block .keyword { color: var(--accent2); }
+  .code-block .value { color: var(--accent3); }
+  .code-block .comment { color: var(--muted); }
+  .code-block .method { color: var(--accent); font-weight: 600; }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    position: relative;
+    margin: 40px 0;
+    padding-left: 32px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2), transparent);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 36px;
+    padding-left: 28px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -4px; top: 10px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .timeline-year {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .timeline-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    color: var(--heading);
+    margin-bottom: 8px;
+  }
+
+  .timeline-desc { font-size: 0.9rem; color: var(--muted); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 28px 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  thead tr {
+    background: rgba(0,229,255,0.07);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 14px 20px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  td {
+    padding: 13px 20px;
+    border-bottom: 1px solid rgba(42,42,58,0.6);
+    color: var(--text);
+    font-weight: 300;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-cyan { background: rgba(0,229,255,0.12); color: var(--accent); border: 1px solid rgba(0,229,255,0.25); }
+  .badge-red  { background: rgba(255,77,109,0.12); color: var(--accent2); border: 1px solid rgba(255,77,109,0.25); }
+  .badge-green{ background: rgba(168,255,120,0.12); color: var(--accent3); border: 1px solid rgba(168,255,120,0.25); }
+
+  /* ── STATE MACHINE ── */
+  .state-machine {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 32px 0;
+    justify-content: center;
+  }
+
+  .state {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 22px;
+    text-align: center;
+    min-width: 110px;
+  }
+
+  .state-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .state-desc { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 0.65rem;
+    color: var(--accent2);
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: center;
+    min-width: 70px;
+  }
+
+  .arrow-line {
+    width: 100%;
+    height: 1px;
+    background: var(--accent2);
+    position: relative;
+    margin: 4px 0;
+  }
+
+  .arrow-line::after {
+    content: '▶';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.6rem;
+    color: var(--accent2);
+  }
+
+  /* ── LAYER ARCHITECTURE ── */
+  .layer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 32px 0;
+    max-width: 560px;
+  }
+
+  .layer {
+    border-radius: 8px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s;
+  }
+
+  .layer:hover { transform: translateX(8px); }
+
+  .layer-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    min-width: 24px;
+  }
+
+  .layer-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    color: var(--heading);
+    flex: 1;
+  }
+
+  .layer-detail { font-size: 0.78rem; color: var(--muted); }
+
+  .l7 { background: rgba(0,229,255,0.10); border: 1px solid rgba(0,229,255,0.2); }
+  .l6 { background: rgba(0,229,255,0.07); border: 1px solid rgba(0,229,255,0.15); }
+  .l5 { background: rgba(168,255,120,0.07); border: 1px solid rgba(168,255,120,0.15); }
+  .l4 { background: rgba(168,255,120,0.05); border: 1px solid rgba(168,255,120,0.12); }
+  .l3 { background: rgba(255,77,109,0.05); border: 1px solid rgba(255,77,109,0.12); }
+  .l2 { background: rgba(255,77,109,0.03); border: 1px solid rgba(255,77,109,0.08); }
+  .l1 { background: rgba(255,255,255,0.02); border: 1px solid var(--border); }
+
+  /* ── FAQ ── */
+  .faq-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .faq-question {
+    width: 100%;
+    background: var(--card);
+    border: none;
+    padding: 20px 28px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--heading);
+    font-family: 'Sora', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .faq-question:hover { background: rgba(255,255,255,0.04); }
+
+  .faq-chevron {
+    color: var(--accent);
+    font-size: 1.2rem;
+    transition: transform 0.3s;
+    font-family: monospace;
+  }
+
+  .faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s;
+    background: var(--surface);
+    font-size: 0.9rem;
+    color: var(--muted);
+    padding: 0 28px;
+    font-weight: 300;
+  }
+
+  .faq-answer.open {
+    max-height: 400px;
+    padding: 20px 28px;
+  }
+
+  .faq-item.open .faq-chevron { transform: rotate(45deg); }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--accent3);
+    background: rgba(168,255,120,0.05);
+    border-radius: 0 8px 8px 0;
+    padding: 18px 24px;
+    margin: 28px 0;
+    font-size: 0.9rem;
+  }
+
+  .callout.warn {
+    border-color: var(--accent2);
+    background: rgba(255,77,109,0.05);
+  }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    color: var(--accent3);
+    font-weight: 600;
+  }
+
+  .callout.warn .callout-label { color: var(--accent2); }
+
+  /* ── BIB ── */
+  .bib-list { list-style: none; margin-top: 24px; }
+
+  .bib-list li {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .bib-list li .bib-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    min-width: 28px;
+    font-weight: 600;
+  }
+
+  .bib-list li a { color: var(--accent); text-decoration: none; }
+  .bib-list li a:hover { text-decoration: underline; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 48px 0;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1024px) {
+    nav { display: none; }
+    main { margin-left: 0; padding: 0 28px 60px; }
+    .card-grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .card-grid-2, .card-grid-3 { grid-template-columns: 1fr; }
+    .hero-meta { flex-wrap: wrap; gap: 24px; }
+    .state-machine { flex-direction: column; }
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    z-index: 999;
+    transition: width 0.1s linear;
+  }
+
+  /* ── LATENCY CHART ── */
+  .latency-bar-group { margin: 8px 0; }
+  .latency-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+  }
+  .latency-label span:first-child { color: var(--text); }
+  .latency-label span:last-child { font-family: 'IBM Plex Mono', monospace; color: var(--accent3); font-size: 0.78rem; }
+  .latency-track {
+    height: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .latency-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 1s 0.5s ease;
+  }
+
+  section.visible .latency-fill { transform: scaleX(1); }
+
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- SIDEBAR -->
+<nav>
+  <div class="logo">RT<span>SP</span></div>
+  <ul>
+    <li><a href="#intro">01 — Introdução</a></li>
+    <li><a href="#historia">02 — História</a></li>
+    <li><a href="#caracteristicas">03 — Características</a></li>
+    <li><a href="#arquitetura">04 — Arquitetura</a></li>
+    <li><a href="#aplicacoes">05 — Aplicações</a></li>
+    <li><a href="#desafios">06 — Desafios & Futuro</a></li>
+    <li><a href="#conclusao">07 — Conclusão</a></li>
+    <li><a href="#perguntas">08 — Perguntas</a></li>
+    <li><a href="#bibliografia">09 — Bibliografia</a></li>
+  </ul>
+  <div class="version">RFC 2326 · 1998<br>Atualizado 2024</div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- HERO -->
+  <div class="hero" id="intro">
+    <div class="hero-bg-text">RTSP</div>
+    <div class="hero-eyebrow">// Protocolos de Redes — Trabalho Acadêmico</div>
+    <h1>Real Time<br><em>Streaming</em><br>Protocol</h1>
+    <p class="hero-sub">Uma análise completa do protocolo que definiu os padrões de transmissão e controle de mídia em tempo real na internet moderna.</p>
+    <div class="hero-meta">
+      <div class="meta-item">
+        <span class="meta-label">RFC</span>
+        <span class="meta-value">2326</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Publicação</span>
+        <span class="meta-value">1998</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Porta Padrão</span>
+        <span class="meta-value">554</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Camada OSI</span>
+        <span class="meta-value">Aplicação</span>
+      </div>
+    </div>
+
+    <div class="divider" style="margin-top: 60px;">INTRODUÇÃO</div>
+
+    <p>No início dos anos 1990, a internet ainda engatinhava quando o assunto era transmissão de mídia. Vídeos e áudios eram baixados integralmente antes de serem reproduzidos — uma experiência frustrante em redes lentas. A necessidade de um mecanismo que permitisse <strong>controlar e transmitir fluxos multimídia em tempo real</strong> era urgente.</p>
+
+    <p>O <strong>Real Time Streaming Protocol (RTSP)</strong> surgiu como resposta a esse desafio. Desenvolvido em 1998 pela IETF (Internet Engineering Task Force), o protocolo define um padrão de comunicação que funciona como um <em>"controle remoto da internet"</em> — permitindo que clientes enviem comandos de reprodução (play, pause, stop, seek) para servidores de mídia sem precisar baixar o conteúdo previamente.</p>
+
+    <div class="callout">
+      <div class="callout-label">Definição</div>
+      O RTSP é um protocolo de nível de aplicação para controle sobre a entrega de dados com propriedades em tempo real. O protocolo fornece uma estrutura extensível para permitir entrega controlada sob demanda de dados em tempo real, como áudio e vídeo. As fontes de dados podem incluir tanto dados ao vivo quanto dados armazenados.
+    </div>
+
+    <p>Diferente do HTTP, que transfere conteúdo estático, o RTSP foi projetado especificamente para estabelecer e controlar sessões de mídia contínua — delegando a transmissão propriamente dita a protocolos como RTP e RTCP, com os quais opera em conjunto.</p>
+  </div>
+
+  <!-- HISTÓRIA -->
+  <section id="historia">
+    <div class="section-tag">02</div>
+    <h2>História & Origem</h2>
+
+    <p>O RTSP nasceu da confluência de pesquisa universitária e demanda industrial. Em meados dos anos 1990, o crescimento do tráfego multimídia na internet expôs as limitações dos protocolos existentes para lidar com streaming em tempo real.</p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-year">1993 — 1995</div>
+        <div class="timeline-title">Precursores e motivações</div>
+        <div class="timeline-desc">O protocolo MBone (Multicast Backbone) começa a ser usado para transmissões ao vivo experimentais na internet. Pesquisadores percebem a necessidade de um protocolo dedicado ao controle de fluxos. O HTTP 1.0 se mostra inadequado para streaming por sua natureza stateless e sua limitação de uma requisição por conexão.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-year">1996</div>
+        <div class="timeline-title">Primeiras propostas</div>
+        <div class="timeline-desc">Henning Schulzrinne (Columbia University) e Rob Lanphier (RealNetworks) começam a esboçar o draft inicial do RTSP. A RealNetworks já havia lançado o RealAudio com um protocolo proprietário (PNA/PNM), mas havia pressão pela padronização aberta.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-year">1996 — 1997</div>
+        <div class="timeline-title">Desenvolvimento colaborativo na IETF</div>
+        <div class="timeline-desc">O grupo de trabalho AVT (Audio/Video Transport) da IETF, que já havia produzido o RTP/RTCP, debate e refina o protocolo. A Netscape Communications também contribui com propostas. O design é fortemente influenciado pela sintaxe do HTTP e do SIP.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-year">Abril de 1998</div>
+        <div class="timeline-title">RFC 2326 publicada</div>
+        <div class="timeline-desc">O RTSP 1.0 é oficialmente publicado como RFC 2326. O protocolo é rapidamente adotado por fabricantes de hardware de vigilância (câmeras IP), plataformas de streaming como Real Player e QuickTime, e soluções IPTV corporativas.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-year">2000s</div>
+        <div class="timeline-title">Era de ouro e ampla adoção</div>
+        <div class="timeline-desc">O RTSP se torna o padrão dominante para câmeras IP de segurança (ONVIF), videoconferências e IPTV. Produtos da Cisco, Axis e Bosch passam a implementar o protocolo nativamente. Servidores como Darwin Streaming Server (Apple) e Helix (RealNetworks) ganham popularidade.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-year">2016</div>
+        <div class="timeline-title">RFC 7826 — RTSP 2.0</div>
+        <div class="timeline-desc">A versão 2.0 é publicada, trazendo melhorias significativas: suporte a IPv6, melhor controle de pipeline de requisições, suporte a SRTP para segurança, e maior compatibilidade com NAT traversal. Porém, a adoção foi limitada pela ascensão de alternativas baseadas em HTTP.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-year">2010s — hoje</div>
+        <div class="timeline-title">Concorrência e declínio relativo</div>
+        <div class="timeline-desc">HLS (Apple), DASH (MPEG) e WebRTC ganham terreno em aplicações web. O RTSP mantém domínio em câmeras de segurança e sistemas embedded, mas perde espaço no consumo de vídeo on-demand.</div>
+      </div>
+    </div>
+
+    <div class="divider">COMPARATIVO COM OUTROS PROTOCOLOS DA ÉPOCA</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Ano</th>
+            <th>Controle</th>
+            <th>Transporte</th>
+            <th>Uso Principal</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RTSP</strong></td>
+            <td>1998</td>
+            <td>Stateful, full-duplex</td>
+            <td>TCP/UDP via RTP</td>
+            <td>Streaming controlado, câmeras IP</td>
+            <td><span class="badge badge-green">Ativo (nicho)</span></td>
+          </tr>
+          <tr>
+            <td>PNA (RealNetworks)</td>
+            <td>1995</td>
+            <td>Proprietário</td>
+            <td>UDP/TCP</td>
+            <td>RealPlayer streaming</td>
+            <td><span class="badge badge-red">Descontinuado</span></td>
+          </tr>
+          <tr>
+            <td>MMS (Microsoft)</td>
+            <td>1996</td>
+            <td>Proprietário</td>
+            <td>TCP/UDP</td>
+            <td>Windows Media Player</td>
+            <td><span class="badge badge-red">Descontinuado</span></td>
+          </tr>
+          <tr>
+            <td>HTTP Progressive</td>
+            <td>~1996</td>
+            <td>Stateless</td>
+            <td>TCP</td>
+            <td>Download progressivo</td>
+            <td><span class="badge badge-cyan">Legado</span></td>
+          </tr>
+          <tr>
+            <td>HLS (Apple)</td>
+            <td>2009</td>
+            <td>Stateless</td>
+            <td>TCP/HTTP</td>
+            <td>OTT, live streaming web</td>
+            <td><span class="badge badge-green">Dominante</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Enquanto protocolos como MMS e PNA eram proprietários e fechados, o RTSP trouxe <strong>abertura e padronização</strong>, facilitando a interoperabilidade entre diferentes sistemas — um diferencial crucial para sua adoção em ambientes corporativos e de segurança.</p>
+  </section>
+
+  <!-- CARACTERÍSTICAS -->
+  <section id="caracteristicas">
+    <div class="section-tag">03</div>
+    <h2>Características Técnicas</h2>
+
+    <p>O RTSP foi projetado com um conjunto robusto de características que o diferenciam de protocolos de transferência de dados convencionais. Sua arquitetura é orientada ao controle de sessão, não à transferência de dados.</p>
+
+    <h3><em>Infraestrutura</em> e Componentes</h3>
+
+    <div class="card-grid card-grid-3">
+      <div class="card">
+        <span class="card-icon">🖥️</span>
+        <h4>Servidor RTSP</h4>
+        <p>Armazena e serve os fluxos de mídia. Interpreta comandos do cliente, gerencia sessões e coordena os fluxos RTP. Exemplos: Darwin Streaming Server, GStreamer, FFmpeg.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">💻</span>
+        <h4>Cliente RTSP</h4>
+        <p>Inicia a sessão enviando requisições de controle. Recebe os dados de mídia via RTP em canal separado. Exemplos: VLC, QuickTime, câmeras IP como clientes reversos.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔀</span>
+        <h4>Proxy / Relay</h4>
+        <p>Intermedia requisições entre cliente e servidor. Pode realizar caching de fluxos, transcodificação em tempo real ou multiplexação de sessões para economizar largura de banda.</p>
+      </div>
+    </div>
+
+    <h3>Estados de uma <em>Conexão RTSP</em></h3>
+
+    <p>Uma sessão RTSP passa por estados bem definidos, semelhante a uma máquina de estados finitos:</p>
+
+    <div class="state-machine">
+      <div class="state">
+        <div class="state-name">INIT</div>
+        <div class="state-desc">Inicial</div>
+      </div>
+      <div class="arrow">
+        <span>SETUP</span>
+        <div class="arrow-line"></div>
+      </div>
+      <div class="state">
+        <div class="state-name">READY</div>
+        <div class="state-desc">Configurado</div>
+      </div>
+      <div class="arrow">
+        <span>PLAY</span>
+        <div class="arrow-line"></div>
+      </div>
+      <div class="state">
+        <div class="state-name">PLAYING</div>
+        <div class="state-desc">Reproduzindo</div>
+      </div>
+      <div class="arrow">
+        <span>PAUSE</span>
+        <div class="arrow-line"></div>
+      </div>
+      <div class="state">
+        <div class="state-name">READY</div>
+        <div class="state-desc">Pausado</div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-label">Importante</div>
+      O estado TEARDOWN pode ser chamado a partir de qualquer estado, encerrando a sessão e liberando todos os recursos alocados no servidor. A sessão é identificada por um <strong>Session ID</strong> único gerado pelo servidor na resposta ao primeiro SETUP.
+    </div>
+
+    <h3>Métodos <em>Principais</em></h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Método</th>
+            <th>Direção</th>
+            <th>Descrição</th>
+            <th>Estado Necessário</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-cyan">OPTIONS</span></td>
+            <td>C → S</td>
+            <td>Lista os métodos suportados pelo servidor</td>
+            <td>Qualquer</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-cyan">DESCRIBE</span></td>
+            <td>C → S</td>
+            <td>Obtém a descrição SDP do fluxo de mídia</td>
+            <td>INIT</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">SETUP</span></td>
+            <td>C → S</td>
+            <td>Especifica o transporte para um fluxo de mídia e inicia a sessão</td>
+            <td>INIT → READY</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">PLAY</span></td>
+            <td>C → S</td>
+            <td>Inicia ou retoma a reprodução do fluxo</td>
+            <td>READY → PLAYING</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-cyan">PAUSE</span></td>
+            <td>C → S</td>
+            <td>Pausa temporariamente a transmissão</td>
+            <td>PLAYING → READY</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-red">TEARDOWN</span></td>
+            <td>C → S</td>
+            <td>Encerra a sessão e libera os recursos</td>
+            <td>Qualquer → INIT</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-cyan">ANNOUNCE</span></td>
+            <td>C → S / S → C</td>
+            <td>Envia ou atualiza a descrição SDP de uma apresentação</td>
+            <td>INIT/READY</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-cyan">RECORD</span></td>
+            <td>C → S</td>
+            <td>Inicia gravação de uma sessão no servidor</td>
+            <td>READY</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-cyan">GET_PARAMETER</span></td>
+            <td>C ↔ S</td>
+            <td>Recupera o valor de um parâmetro da sessão</td>
+            <td>Qualquer</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-cyan">SET_PARAMETER</span></td>
+            <td>C ↔ S</td>
+            <td>Define o valor de um parâmetro da sessão</td>
+            <td>Qualquer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Exemplo de Troca de <em>Mensagens</em></h3>
+
+    <div class="code-block">
+<span class="comment">// Cliente → Servidor: Negociação inicial</span>
+<span class="method">OPTIONS</span> rtsp://camera.local:554/stream RTSP/1.0
+CSeq: <span class="value">1</span>
+User-Agent: <span class="value">VLC/3.0.18</span>
+
+<span class="comment">// Servidor → Cliente</span>
+RTSP/1.0 <span class="value">200</span> OK
+CSeq: <span class="value">1</span>
+Public: <span class="keyword">OPTIONS, DESCRIBE, SETUP, PLAY, PAUSE, TEARDOWN</span>
+
+<span class="comment">// Cliente solicita descrição SDP</span>
+<span class="method">DESCRIBE</span> rtsp://camera.local:554/stream RTSP/1.0
+CSeq: <span class="value">2</span>
+Accept: <span class="keyword">application/sdp</span>
+
+<span class="comment">// Servidor responde com SDP</span>
+RTSP/1.0 <span class="value">200</span> OK
+Content-Type: <span class="keyword">application/sdp</span>
+Session: <span class="value">12345678</span>
+
+v=<span class="value">0</span>
+o=- 2890844526 2890842807 IN IP4 camera.local
+m=video <span class="value">0</span> RTP/AVP <span class="value">96</span>
+a=rtpmap:<span class="value">96</span> H264/90000
+
+<span class="comment">// Setup do canal de transporte</span>
+<span class="method">SETUP</span> rtsp://camera.local:554/stream/track1 RTSP/1.0
+CSeq: <span class="value">3</span>
+Transport: RTP/AVP;<span class="keyword">unicast</span>;client_port=<span class="value">8000-8001</span>
+Session: <span class="value">12345678</span>
+
+<span class="comment">// Inicia reprodução</span>
+<span class="method">PLAY</span> rtsp://camera.local:554/stream RTSP/1.0
+CSeq: <span class="value">4</span>
+Range: <span class="keyword">npt=0.000-</span>
+Session: <span class="value">12345678</span>
+    </div>
+
+    <h3>Protocolos <em>Envolvidos</em></h3>
+
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <span class="card-icon">📦</span>
+        <h4>RTP — Real-time Transport Protocol</h4>
+        <p>Responsável pelo transporte efetivo dos dados de mídia (áudio/vídeo). Opera geralmente via UDP para minimizar a latência. Cada pacote RTP contém número de sequência, timestamp e informações de sincronização.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📊</span>
+        <h4>RTCP — RTP Control Protocol</h4>
+        <p>Canal de controle complementar ao RTP. Envia relatórios de qualidade (QoS), estatísticas de perda de pacotes e sincronização entre fluxos de áudio e vídeo. Usa porta ímpar adjacente ao RTP.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📄</span>
+        <h4>SDP — Session Description Protocol</h4>
+        <p>Formato de descrição de sessão multimídia retornado pelo DESCRIBE. Define codecs, portas, tipos de payload, largura de banda e parâmetros de sincronização da sessão.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔒</span>
+        <h4>SRTP — Secure RTP</h4>
+        <p>Versão segura do RTP com criptografia AES e autenticação HMAC-SHA1. Utilizado quando a segurança é necessária, especialmente em implementações RTSP 2.0 sobre TLS (RTSPS).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARQUITETURA -->
+  <section id="arquitetura">
+    <div class="section-tag">04</div>
+    <h2>Arquitetura & Camadas OSI</h2>
+
+    <p>O RTSP opera na <strong>Camada 7 (Aplicação)</strong> do modelo OSI, mas seu funcionamento depende intimamente das camadas inferiores. Compreender como cada camada é afetada é fundamental para otimizar sessões de streaming.</p>
+
+    <div class="layer-stack">
+      <div class="layer l7">
+        <span class="layer-num">L7</span>
+        <span class="layer-name">Aplicação</span>
+        <span class="layer-detail">RTSP, SDP, RTCP (controle)</span>
+      </div>
+      <div class="layer l6">
+        <span class="layer-num">L6</span>
+        <span class="layer-name">Apresentação</span>
+        <span class="layer-detail">Codecs: H.264, H.265, AAC, G.711</span>
+      </div>
+      <div class="layer l5">
+        <span class="layer-num">L5</span>
+        <span class="layer-name">Sessão</span>
+        <span class="layer-detail">Session ID, gerenciamento de estado RTSP</span>
+      </div>
+      <div class="layer l4">
+        <span class="layer-num">L4</span>
+        <span class="layer-name">Transporte</span>
+        <span class="layer-detail">TCP (porta 554 — RTSP) + UDP (RTP/RTCP)</span>
+      </div>
+      <div class="layer l3">
+        <span class="layer-num">L3</span>
+        <span class="layer-name">Rede</span>
+        <span class="layer-detail">IP (unicast/multicast), roteamento de pacotes</span>
+      </div>
+      <div class="layer l2">
+        <span class="layer-num">L2</span>
+        <span class="layer-name">Enlace</span>
+        <span class="layer-detail">Ethernet, Wi-Fi — QoS e priorização de tráfego</span>
+      </div>
+      <div class="layer l1">
+        <span class="layer-num">L1</span>
+        <span class="layer-name">Física</span>
+        <span class="layer-detail">Cabos, fibra, ondas de rádio</span>
+      </div>
+    </div>
+
+    <h3>Separação entre <em>Controle e Dados</em></h3>
+
+    <p>Uma característica arquitetural fundamental do RTSP é a <strong>separação clara entre o canal de controle e o canal de dados</strong>:</p>
+
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <span class="card-icon">🎮</span>
+        <h4>Canal de Controle (RTSP)</h4>
+        <p>Usa TCP (confiável, orientado a conexão) na porta 554. Transmite comandos de controle de sessão (SETUP, PLAY, PAUSE, TEARDOWN). A confiabilidade é crítica: perder um comando de controle é inaceitável.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📡</span>
+        <h4>Canal de Dados (RTP/RTCP)</h4>
+        <p>Usa UDP (não confiável, sem conexão) em portas dinâmicas negociadas. A perda de alguns pacotes de mídia é tolerável — melhor perder alguns frames do que ter atraso no buffer. RTCP monitora a qualidade em paralelo.</p>
+      </div>
+    </div>
+
+    <h3>Modos de <em>Transporte</em></h3>
+
+    <div class="code-block">
+<span class="comment">// Unicast UDP — modo padrão, menor latência</span>
+Transport: <span class="keyword">RTP/AVP;unicast</span>;client_port=<span class="value">8000-8001</span>
+
+<span class="comment">// Unicast TCP interleaved — útil atrás de NAT/firewall</span>
+Transport: <span class="keyword">RTP/AVP/TCP;unicast;interleaved=0-1</span>
+
+<span class="comment">// Multicast — eficiente para múltiplos clientes simultâneos</span>
+Transport: <span class="keyword">RTP/AVP;multicast</span>;destination=<span class="value">224.2.1.1</span>;port=<span class="value">3456-3457</span>;ttl=<span class="value">16</span>
+    </div>
+
+    <h3>Funcionamento do <em>Roteamento</em></h3>
+
+    <p>Na <strong>Camada de Rede</strong>, o RTSP pode operar em modo unicast (um servidor para um cliente) ou multicast (um servidor para múltiplos clientes). O multicast é particularmente eficiente para IPTV e transmissões ao vivo em redes corporativas, pois o tráfego de vídeo é replicado apenas nos roteadores, não no servidor.</p>
+
+    <p>Na <strong>Camada de Enlace</strong>, a priorização de tráfego via QoS (IEEE 802.1p ou DSCP) é essencial para garantir latência baixa. Pacotes RTP são tipicamente marcados com DSCP EF (Expedited Forwarding) para tratamento prioritário nos switches e roteadores.</p>
+  </section>
+
+  <!-- APLICAÇÕES -->
+  <section id="aplicacoes">
+    <div class="section-tag">05</div>
+    <h2>Aplicações & Performance</h2>
+
+    <p>O RTSP encontrou aplicação em um vasto leque de cenários industriais e comerciais. Cada aplicação tem requisitos diferentes de latência, segurança e throughput.</p>
+
+    <div class="card-grid card-grid-3">
+      <div class="card">
+        <span class="card-icon">📹</span>
+        <h4>Câmeras IP & CFTV</h4>
+        <p>Principal domínio atual do RTSP. Câmeras de segurança implementam RTSP nativamente, permitindo integração com NVRs e VMS. O padrão ONVIF padronizou o uso de RTSP no setor.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📺</span>
+        <h4>IPTV & Vídeo Corporativo</h4>
+        <p>Sistemas de IPTV empresariais usam RTSP para distribuição de canais ao vivo em redes internas, aproveitando multicast para eficiência de rede.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🎮</span>
+        <h4>Jogos & Realidade Virtual</h4>
+        <p>Aplicações de streaming de jogos em redes locais (como parsec em ambientes controlados) e transmissão de feeds de câmera em VR industrial.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏥</span>
+        <h4>Telemedicina</h4>
+        <p>Transmissão de vídeo de alta qualidade em procedimentos cirúrgicos remotos onde baixa latência e alta fidelidade são críticas.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🚗</span>
+        <h4>Veículos Autônomos</h4>
+        <p>Transmissão de feeds de câmeras embarcadas para centros de monitoramento remoto, onde latência sub-100ms é fundamental.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏭</span>
+        <h4>Automação Industrial (IIoT)</h4>
+        <p>Monitoramento de linhas de produção, inspeção visual automatizada e robótica remota em ambientes de rede controlados.</p>
+      </div>
+    </div>
+
+    <h3>Impacto das Configurações de <em>Transporte na Performance</em></h3>
+
+    <p>A escolha do modo de transporte tem impacto direto na latência, performance e segurança. Veja a comparação:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Configuração</th>
+            <th>Latência</th>
+            <th>Confiabilidade</th>
+            <th>NAT Friendly</th>
+            <th>Segurança</th>
+            <th>Uso Ideal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>RTP/UDP Unicast</td>
+            <td><span class="badge badge-green">Baixa (&lt;50ms)</span></td>
+            <td>Média</td>
+            <td>❌ Difícil</td>
+            <td>Básica</td>
+            <td>LAN controlada</td>
+          </tr>
+          <tr>
+            <td>RTP/TCP (interleaved)</td>
+            <td><span class="badge badge-cyan">Média (50-150ms)</span></td>
+            <td>Alta</td>
+            <td>✅ Sim</td>
+            <td>Básica</td>
+            <td>WAN / Behind NAT</td>
+          </tr>
+          <tr>
+            <td>RTP/UDP Multicast</td>
+            <td><span class="badge badge-green">Baixa</span></td>
+            <td>Baixa</td>
+            <td>❌ Não</td>
+            <td>Básica</td>
+            <td>IPTV corporativo</td>
+          </tr>
+          <tr>
+            <td>SRTP/UDP (RTSPS)</td>
+            <td><span class="badge badge-cyan">Média</span></td>
+            <td>Média</td>
+            <td>❌ Difícil</td>
+            <td><span class="badge badge-green">Alta (AES)</span></td>
+            <td>Ambientes críticos</td>
+          </tr>
+          <tr>
+            <td>RTSP sobre TLS (RTSPS)</td>
+            <td><span class="badge badge-red">Alta (&gt;150ms)</span></td>
+            <td>Alta</td>
+            <td>✅ Sim</td>
+            <td><span class="badge badge-green">Muito Alta</span></td>
+            <td>Transmissão segura WAN</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Latência por <em>Modo de Transporte</em></h3>
+
+    <div style="margin: 32px 0;">
+      <div class="latency-bar-group">
+        <div class="latency-label"><span>RTP/UDP Unicast (LAN)</span><span>&lt; 50ms</span></div>
+        <div class="latency-track"><div class="latency-fill" style="width:15%"></div></div>
+      </div>
+      <div class="latency-bar-group" style="margin-top:16px">
+        <div class="latency-label"><span>RTP/UDP Multicast</span><span>~60ms</span></div>
+        <div class="latency-track"><div class="latency-fill" style="width:20%"></div></div>
+      </div>
+      <div class="latency-bar-group" style="margin-top:16px">
+        <div class="latency-label"><span>RTP/TCP Interleaved</span><span>~100ms</span></div>
+        <div class="latency-track"><div class="latency-fill" style="width:35%"></div></div>
+      </div>
+      <div class="latency-bar-group" style="margin-top:16px">
+        <div class="latency-label"><span>SRTP/UDP</span><span>~120ms</span></div>
+        <div class="latency-track"><div class="latency-fill" style="width:42%"></div></div>
+      </div>
+      <div class="latency-bar-group" style="margin-top:16px">
+        <div class="latency-label"><span>RTSP sobre TLS (WAN)</span><span>~200ms+</span></div>
+        <div class="latency-track"><div class="latency-fill" style="width:70%"></div></div>
+      </div>
+      <div class="latency-bar-group" style="margin-top:16px">
+        <div class="latency-label"><span>HLS (referência)</span><span>~5-30s</span></div>
+        <div class="latency-track"><div class="latency-fill" style="width:100%; background: linear-gradient(90deg, var(--accent2), #ff0)"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESAFIOS -->
+  <section id="desafios">
+    <div class="section-tag">06</div>
+    <h2>Desafios & Futuro</h2>
+
+    <div class="callout warn">
+      <div class="callout-label">Contexto</div>
+      O uso do RTSP em aplicações web de consumo tem caído drasticamente desde 2015. Navegadores modernos não suportam RTSP nativamente, e alternativas baseadas em HTTP oferecem vantagens práticas significativas para a maioria dos casos de uso.
+    </div>
+
+    <h3>Por que o RTSP está <em>perdendo espaço</em>?</h3>
+
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <span class="card-icon">🚫</span>
+        <h4>Sem suporte nativo em navegadores</h4>
+        <p>Nenhum navegador moderno suporta RTSP diretamente. Chrome, Firefox e Safari não conseguem reproduzir streams RTSP sem plugins (Flash, que foi encerrado) ou gateways intermediários. Isso tornou o protocolo inviável para a web moderna.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔥</span>
+        <h4>Problemas com NAT e Firewall</h4>
+        <p>O modelo de comunicação do RTSP, que abre portas dinâmicas para RTP/RTCP, enfrenta bloqueios frequentes em firewalls corporativos e NAT, exigindo configurações complexas ou fallback para TCP interleaved.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📱</span>
+        <h4>Ecossistema mobile fragmentado</h4>
+        <p>iOS removeu o suporte RTSP nativo em versões recentes. Android mantém suporte parcial. O desenvolvimento de apps para consumo de RTSP requer bibliotecas externas como libVLC ou ExoPlayer.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">☁️</span>
+        <h4>Infraestrutura de CDN</h4>
+        <p>Redes de distribuição de conteúdo (CDNs) são otimizadas para HTTP/HTTPS. Distribuir streams RTSP globalmente via CDN é impraticável — o protocolo não escala para audiências massivas da forma que HLS ou DASH escalam.</p>
+      </div>
+    </div>
+
+    <h3>Protocolos que estão <em>substituindo</em> o RTSP</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Latência</th>
+            <th>Browser</th>
+            <th>CDN</th>
+            <th>Cenário</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>HLS (HTTP Live Streaming)</strong></td>
+            <td>5–30s</td>
+            <td>✅ Nativo</td>
+            <td>✅ Ótimo</td>
+            <td>VOD e live streaming web</td>
+          </tr>
+          <tr>
+            <td><strong>DASH (MPEG-DASH)</strong></td>
+            <td>2–10s</td>
+            <td>✅ Via MSE</td>
+            <td>✅ Ótimo</td>
+            <td>Streaming adaptativo</td>
+          </tr>
+          <tr>
+            <td><strong>WebRTC</strong></td>
+            <td>&lt;500ms</td>
+            <td>✅ Nativo</td>
+            <td>⚠️ Limitado</td>
+            <td>Videoconferência, baixa latência</td>
+          </tr>
+          <tr>
+            <td><strong>SRT (Haivision)</strong></td>
+            <td>~120ms</td>
+            <td>❌ Não</td>
+            <td>⚠️ Limitado</td>
+            <td>Ingestão de broadcast</td>
+          </tr>
+          <tr>
+            <td><strong>RTMP (Adobe)</strong></td>
+            <td>1–3s</td>
+            <td>❌ Sem Flash</td>
+            <td>⚠️ Ingestão</td>
+            <td>Ingestão para plataformas</td>
+          </tr>
+          <tr>
+            <td><strong>RTSP (atual)</strong></td>
+            <td>&lt;100ms</td>
+            <td>❌ Não</td>
+            <td>❌ Não</td>
+            <td>CFTV, IoT, redes fechadas</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>O <em>Futuro</em> do RTSP</h3>
+
+    <p>Apesar do declínio em aplicações web, o RTSP não está morto — ele está se consolidando em nichos onde suas características são superiores:</p>
+
+    <div class="card-grid card-grid-3">
+      <div class="card">
+        <span class="card-icon">🔗</span>
+        <h4>RTSP como protocolo de ingestão</h4>
+        <p>Câmeras IP enviam streams RTSP para um servidor local, que os transcoda para HLS/DASH para distribuição web. O RTSP cuida da "última milha" entre dispositivo e servidor.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🌐</span>
+        <h4>WebRTC + RTSP Gateway</h4>
+        <p>Soluções como mediamtx (antigo rtsp-simple-server) permitem converter streams RTSP de câmeras em WebRTC em tempo real, combinando o melhor dos dois mundos.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🤖</span>
+        <h4>RTSP em IoT e Edge Computing</h4>
+        <p>Em dispositivos embarcados com recursos limitados, o RTSP continua sendo preferido por sua leveza e latência. Drones, robôs e sensores industriais dependem do protocolo.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-label">Perspectiva</div>
+      O RTSP 2.0 (RFC 7826, 2016) trouxe melhorias significativas, mas a adoção foi lenta. O futuro mais provável é o RTSP como protocolo de "bastidores" em sistemas de câmeras, com conversão para protocolos web-friendly (WebRTC, HLS) na borda da rede.
+    </div>
+  </section>
+
+  <!-- CONCLUSÃO -->
+  <section id="conclusao">
+    <div class="section-tag">07</div>
+    <h2>Conclusão & Legado</h2>
+
+    <p>O RTSP representou um salto qualitativo na história dos protocolos de internet. Ao separar claramente o controle da transmissão e ao criar uma semântica padronizada para sessões de mídia, ele estabeleceu fundamentos que influenciaram toda uma geração de protocolos subsequentes.</p>
+
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <span class="card-icon">🏗️</span>
+        <h4>Influência no Design de Protocolos</h4>
+        <p>A arquitetura RTSP inspirou o design do SIP (Session Initiation Protocol), amplamente usado em VoIP. O modelo de separação controle/dados foi adotado pelo WebRTC. A sintaxe parecida com HTTP facilitou implementações e influenciou APIs REST modernas para mídia.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📚</span>
+        <h4>Padronização do Ecossistema</h4>
+        <p>Antes do RTSP, cada fabricante tinha seu próprio protocolo proprietário. A padronização aberta permitiu interoperabilidade entre câmeras, servidores e clientes de diferentes fabricantes — modelo que o ONVIF expandiu para o setor de segurança eletrônica.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">⚡</span>
+        <h4>Evolução do Streaming</h4>
+        <p>O RTSP provou que era viável ter streaming de baixa latência na internet. Essa prova de conceito abriu caminho para investimentos em codecs mais eficientes (H.264, H.265), melhorias em infraestrutura de rede e eventualmente para o streaming adaptativo (ABR) que usamos hoje.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🌍</span>
+        <h4>Democratização do Vídeo Online</h4>
+        <p>Plataformas como YouTube (2005) e o boom do streaming só foram possíveis graças ao trabalho de padronização que o RTSP ajudou a estabelecer. O protocolo contribuiu para transformar vídeo de um privilégio broadcast em uma tecnologia acessível para qualquer desenvolvedor.</p>
+      </div>
+    </div>
+
+    <p style="margin-top: 32px; font-style: italic; color: var(--muted); border-left: 2px solid var(--border); padding-left: 20px;">
+      "O RTSP foi para o streaming o que o HTTP foi para a web: uma fundação sobre a qual todo o ecossistema moderno de mídia digital foi construído. Mesmo quando seu uso direto diminui, seu legado arquitetural permanece presente em cada plataforma de streaming que assistimos hoje."
+    </p>
+  </section>
+
+  <!-- PERGUNTAS -->
+  <section id="perguntas">
+    <div class="section-tag">08</div>
+    <h2>Perguntas Frequentes</h2>
+
+    <p>Questões comuns que surgem após o estudo do protocolo RTSP:</p>
+
+    <div style="margin-top: 32px;">
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Qual é a diferença entre RTSP e RTMP?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          O RTSP (Real Time Streaming Protocol) é um protocolo de controle — ele não transmite dados de mídia diretamente, mas gerencia sessões de streaming usando RTP para transporte. O RTMP (Real-Time Messaging Protocol), criado pela Adobe/Macromedia, é um protocolo completo de transporte que encapsula áudio, vídeo e dados em um único fluxo TCP. O RTSP foi projetado para baixa latência e controle de sessão, enquanto o RTMP era voltado para o ecossistema Flash. Hoje, o RTMP ainda é usado para ingestão de streams em plataformas como YouTube e Twitch (recebendo o vídeo do encoder), mas foi descontinuado para reprodução no browser após o fim do Flash.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Por que o RTSP usa UDP para dados e TCP para controle?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          O TCP garante entrega confiável e ordenada, mas ao custo de retransmissões em caso de perda de pacotes — o que introduz latência imprevisível. Para comandos de controle (PLAY, PAUSE, SETUP), confiabilidade é crítica: perder um "PLAY" seria catastrófico. Já para dados de mídia (vídeo, áudio), perder alguns pacotes é tolerável — o player pode interpolar frames perdidos ou exibir artefatos brevemente. A latência adicional de uma retransmissão TCP em fluxo de vídeo ao vivo causaria mais dano (congelamento) do que a perda do pacote em si. Por isso, RTP usa UDP para priorizar baixa latência sobre confiabilidade perfeita.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Como o RTSP lida com NAT e firewalls?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          Este é um dos maiores desafios do RTSP. No modo UDP unicast, o cliente negocia portas dinâmicas para RTP/RTCP durante o SETUP. O firewall precisa estar configurado para permitir o retorno do tráfego UDP nessas portas — o que não acontece automaticamente com NAT simétrico. As soluções incluem: (1) Modo TCP interleaved (RTP encapsulado dentro da conexão TCP do RTSP), que atravessa firewalls como se fosse tráfego web; (2) STUN/TURN para NAT traversal; (3) Configuração explícita de port forwarding no roteador. O RTSP 2.0 trouxe melhorias nesse aspecto, mas o WebRTC tem suporte a ICE/STUN/TURN muito mais maduro para NAT traversal.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          O RTSP é seguro? Como proteger um stream?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          O RTSP padrão (porta 554) não oferece criptografia — o conteúdo trafega em texto claro. Para segurança, há duas abordagens principais: (1) RTSPS — RTSP sobre TLS (porta 322), que criptografa o canal de controle e pode combinar com SRTP para os dados de mídia. Isso protege tanto os comandos quanto o conteúdo. (2) VPN/túnel — encapsular o tráfego RTSP em um túnel VPN (IPSec, WireGuard). Na prática, câmeras IP domésticas frequentemente deixam o RTSP sem autenticação ou com credenciais padrão, resultando em exposição pública — o que alimenta projetos como Shodan e Insecam, que indexam câmeras abertas na internet. Autenticação básica ou digest deve ser sempre habilitada.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Qual a diferença entre RTSP 1.0 e RTSP 2.0?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          O RTSP 2.0 (RFC 7826, 2016) trouxe diversas melhorias: suporte nativo a IPv6; pipeline de requisições mais eficiente (reduz roundtrips iniciais); mecanismo de heartbeat para manter sessões vivas; melhor suporte a NAT traversal via ICE; integração nativa com SRTP para segurança; suporte a múltiplas URIs de mídia em uma sessão; cabeçalhos de Accept-Ranges aprimorados para seek preciso. Apesar das melhorias, o RTSP 2.0 não é retrocompatível com o 1.0 e sua adoção foi lenta — a maioria dos dispositivos de câmera ainda implementa apenas RTSP 1.0.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Posso usar RTSP no navegador web sem plugins?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          Não diretamente. Nenhum navegador moderno suporta RTSP nativo. As alternativas são: (1) Gateway de protocolo: usar um servidor como mediamtx, go2rtc ou Wowza que recebe o stream RTSP e o converte em WebRTC ou HLS para o browser; (2) Transcrição via FFmpeg com saída HLS; (3) Biblioteca JavaScript + WebSocket: projetos como JSMpeg recebem o vídeo via WebSocket e decodificam no canvas. A abordagem WebRTC tem se tornado o padrão para exibição de câmeras RTSP em interfaces web modernas com latência aceitável (~100-500ms).
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Como o RTSP se compara ao WebRTC em termos de latência?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          Em redes locais controladas, RTSP com RTP/UDP pode atingir latências de 20-50ms — inferior ao WebRTC, que tipicamente fica entre 100-500ms devido ao processamento de ICE, DTLS handshake e jitter buffer. Porém, o WebRTC tem vantagens significativas: funciona em navegadores nativamente, atravessa NAT automaticamente via ICE/STUN/TURN, e suporta conexões peer-to-peer sem infraestrutura de servidor centralizada. Para câmeras de segurança em LAN, RTSP é mais eficiente. Para videoconferência e acesso remoto via web, WebRTC é superior. Arquiteturas modernas frequentemente combinam os dois: câmera → RTSP → servidor de borda → WebRTC → browser.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          O que é o CSeq no RTSP e por que ele é importante?
+          <span class="faq-chevron">+</span>
+        </button>
+        <div class="faq-answer">
+          CSeq (Command Sequence Number) é um número inteiro que incrementa a cada requisição RTSP, presente tanto na requisição quanto na resposta correspondente. Ele serve para correlacionar requisições com suas respostas — essencial porque múltiplas requisições podem estar "em voo" ao mesmo tempo (pipelining). Sem CSeq, seria impossível saber qual resposta corresponde a qual requisição. O CSeq começa em 1 e incrementa monotonicamente durante toda a sessão. O servidor deve ecoar o mesmo CSeq da requisição em sua resposta. Se uma resposta chega com CSeq desconhecido, ela pode ser descartada como stale ou duplicada.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BIBLIOGRAFIA -->
+  <section id="bibliografia">
+    <div class="section-tag">09</div>
+    <h2>Bibliografia</h2>
+
+    <p>Referências utilizadas na elaboração deste trabalho:</p>
+
+    <ul class="bib-list">
+      <li>
+        <span class="bib-num">[1]</span>
+        <span>SCHULZRINNE, H.; RAO, A.; LANPHIER, R. <strong>RFC 2326: Real Time Streaming Protocol (RTSP).</strong> IETF, abril de 1998. Disponível em: <a href="https://www.rfc-editor.org/rfc/rfc2326" target="_blank">https://www.rfc-editor.org/rfc/rfc2326</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[2]</span>
+        <span>SCHULZRINNE, H. et al. <strong>RFC 7826: Real-Time Streaming Protocol Version 2.0.</strong> IETF, dezembro de 2016. Disponível em: <a href="https://www.rfc-editor.org/rfc/rfc7826" target="_blank">https://www.rfc-editor.org/rfc/rfc7826</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[3]</span>
+        <span>SCHULZRINNE, H.; CASNER, S.; FREDERICK, R.; JACOBSON, V. <strong>RFC 3550: RTP: A Transport Protocol for Real-Time Applications.</strong> IETF, julho de 2003. Disponível em: <a href="https://www.rfc-editor.org/rfc/rfc3550" target="_blank">https://www.rfc-editor.org/rfc/rfc3550</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[4]</span>
+        <span>TANENBAUM, Andrew S.; WETHERALL, David J. <strong>Computer Networks.</strong> 5ª ed. Pearson Prentice Hall, 2011. Capítulos 6 e 7.</span>
+      </li>
+      <li>
+        <span class="bib-num">[5]</span>
+        <span>KUROSE, James F.; ROSS, Keith W. <strong>Computer Networking: A Top-Down Approach.</strong> 8ª ed. Pearson, 2021. Seção 9.4 — Real-Time Multimedia: Internet Phone and Video Conferencing.</span>
+      </li>
+      <li>
+        <span class="bib-num">[6]</span>
+        <span>ONVIF Forum. <strong>ONVIF Profile S — Streaming Specification.</strong> Disponível em: <a href="https://www.onvif.org/specs/stream/ONVIF-Streaming-Spec.pdf" target="_blank">https://www.onvif.org/</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[7]</span>
+        <span>WANG, Y.; VILLASENOR, J.; GIROD, B. <em>Robust Video Transmission over Lossy Packet Networks.</em> IEEE Signal Processing Magazine, vol. 17, no. 5, 2000.</span>
+      </li>
+      <li>
+        <span class="bib-num">[8]</span>
+        <span>IETF AVT Working Group. <strong>RFC 3551: RTP Profile for Audio and Video Conferences with Minimal Control.</strong> Disponível em: <a href="https://www.rfc-editor.org/rfc/rfc3551" target="_blank">https://www.rfc-editor.org/rfc/rfc3551</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[9]</span>
+        <span>HANDLEY, M.; JACOBSON, V.; PERKINS, C. <strong>RFC 4566: SDP: Session Description Protocol.</strong> IETF, julho de 2006. Disponível em: <a href="https://www.rfc-editor.org/rfc/rfc4566" target="_blank">https://www.rfc-editor.org/rfc/rfc4566</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[10]</span>
+        <span>MDN Web Docs. <em>WebRTC API.</em> Mozilla Developer Network. Disponível em: <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API" target="_blank">https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[11]</span>
+        <span>Apple Inc. <em>HTTP Live Streaming (HLS) — Overview.</em> Apple Developer Documentation. Disponível em: <a href="https://developer.apple.com/documentation/http-live-streaming" target="_blank">https://developer.apple.com/documentation/http-live-streaming</a></span>
+      </li>
+      <li>
+        <span class="bib-num">[12]</span>
+        <span>IANA. <em>Real Time Streaming Protocol (RTSP) Parameters.</em> Internet Assigned Numbers Authority. Disponível em: <a href="https://www.iana.org/assignments/rtsp-parameters" target="_blank">https://www.iana.org/assignments/rtsp-parameters</a></span>
+      </li>
+    </ul>
+  </section>
+
+</main>
+
+<script>
+  // Progress bar
+  const progress = document.getElementById('progress');
+  window.addEventListener('scroll', () => {
+    const scrollTop = document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    progress.style.width = pct + '%';
+  });
+
+  // Nav active link
+  const sections = document.querySelectorAll('section, .hero');
+  const navLinks = document.querySelectorAll('nav ul li a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const id = entry.target.id;
+        const activeLink = document.querySelector(`nav a[href="#${id}"]`);
+        if (activeLink) activeLink.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Latency bars animation on scroll
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('section').forEach(s => sectionObserver.observe(s));
+
+  // FAQ toggle
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const answer = item.querySelector('.faq-answer');
+    const isOpen = item.classList.contains('open');
+
+    // close all
+    document.querySelectorAll('.faq-item').forEach(i => {
+      i.classList.remove('open');
+      i.querySelector('.faq-answer').classList.remove('open');
+    });
+
+    if (!isOpen) {
+      item.classList.add('open');
+      answer.classList.add('open');
+    }
+  }
+</script>
+</body>
+</html>
