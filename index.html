@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocolo RTSP: Controle de Mídia em Tempo Real</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        header {
+            background: #2c3e50;
+            color: #fff;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        nav {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #2980b9;
+            font-weight: bold;
+        }
+        section {
+            background: #fff;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #e67e22;
+        }
+        .method-list {
+            background: #f9f9f9;
+            border-left: 5px solid #3498db;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        .faq {
+            margin-bottom: 15px;
+        }
+        .faq-question {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 40px;
+        }
+        .fluxo-container {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 20px 0;
+        color: #333;
+        }
+        .tabela-fluxo {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden; 
+        }
+        .tabela-fluxo thead {
+            background-color: #34495e;
+            color: white;
+        }
+        .tabela-fluxo th, .tabela-fluxo td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .col-ordem { width: 50px; text-align: center !important; font-weight: bold; color: #7f8c8d; }
+        .col-direcao { width: 120px; text-align: center !important; font-weight: bold; }
+        .col-metodo { width: 150px; }
+    
+        .seta-cs { color: #2980b9; } 
+        .seta-sc { color: #27ae60; }
+    
+        .linha-dados {
+            background-color: #fff9db;
+            font-style: italic;
+            color: #856404;
+        }
+        .metodo-tag {
+            background: #ebf5fb;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        tr:hover { background-color: #f8f9fa; }
+        .rtsp-table-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px 0;
+            background-color: #ffffff;
+            color: #333;
+        }
+        .rtsp-table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        .rtsp-table thead {
+            background-color: #2c3e50;
+            color: #ffffff;
+        }
+        .rtsp-table th, .rtsp-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .rtsp-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .rtsp-table tbody tr:hover {
+            background-color: #f1f4f6;
+        }
+        .header-name {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .tag-tipo {
+            font-size: 0.85em;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            border: 1px solid #bdc3c7;
+        }
+        .exemplo-code {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .similaridades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .sim-card {
+            background: #f9f9f9;
+            border-left: 4px solid #3498db; /* Azul padrão do seu site */
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .sim-card span.header-name {
+            display: block;
+            margin-bottom: 5px;font-size: 1.05em;
+        }
+
+        .sim-card p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>RTSP (Real Time Streaming Protocol)</h1>
+    <p>O "controle remoto" do streaming de mídia</p>
+
+    <p> Grupo 5: João Pedro Peçanha Cotrim, Marco Antonio Tronco Felix, Pedro Ivo Lopes Pinheiro</p>
+</header>
+
+<nav>
+    <ul>
+        <li><a href="#intro">1. Introdução</a></li>
+        <li><a href="#historia">2. História</a></li>
+        <li><a href="#caracteristicas">3. Características</a></li>
+        <li><a href="#arquitetura">4. Arquitetura</a></li>
+        <li><a href="#aplicacoes">5. Aplicações</a></li>
+        <li><a href="#desafios">6. Futuro</a></li>
+        <li><a href="#conclusao">7. Conclusão</a></li>
+        <li><a href="#perguntas">8. Perguntas</a></li>
+        <li><a href="#bibliografia">9. Bibliografia</a></li>
+    </ul>
+</nav>
+
+<section id="intro">
+    <h2>1. Introdução</h2>
+    <p>O <strong>RTSP (Real Time Streaming Protocol)</strong> é um protocolo de nível de aplicação projetado para controlar a entrega de dados com propriedades de tempo real. Ao contrário do que muitos pensam, o RTSP não transmite os dados de mídia em si, mas atua como um "controle remoto" para o servidor de mídia.</p>
+    <p>Sua necessidade surgiu da demanda por interatividade em transmissões online, permitindo que o usuário controle o fluxo (reproduzir, pausar, parar) de forma eficiente, contextualizando-se em sistemas de vigilância, videoconferências e entretenimento.</p>
+    <p>Diferente de outros protocolos como o HTTP, que é otimizado para a entrega de documentos e arquivos estáticos, o RTSP foi criado para lidar com fluxos contínuos onde o controle da transmissão (como pausar ou avançar) é essencial. Ele atua em conjunto com outros protocolos, como o RTP (Real-time Transport Protocol) para o transporte do conteúdo e o SDP (Session Description Protocol) para a descrição das capacidades de mídia. Neste trabalho, exploramos as características e possíveis usos atuais deste protocolo, além de sua arquitetura e história.</p>
+</section>
+
+<section id="historia">
+    <h2>2. História</h2>
+    <p>O RTSP foi proposto originalmente pela <strong>RealNetworks, Netscape e Universidade de Columbia</strong> em 1996, culminando na RFC 2326 em 1998.</p>
+    <p><strong>Comparação com protocolos da época:</strong></p>
+    <ul>
+        <li><strong>HTTP:</strong> Na época, o HTTP era puramente para transferência de arquivos estáticos. Não possuía mecanismos para manter estados de sessão de mídia ou lidar com latência de tempo real.</li>
+        <li><strong>RTMP:</strong> Desenvolvido pela Macromedia (Adobe), era proprietário. O RTSP surgiu como uma alternativa aberta e padronizada pela IETF.</li>
+    </ul>
+    <p>Apesar de distintos, o RTSP possui influência de ambos os protocolos, um exemplo seria o design do RTSP, que foi fortemente inspirado no HTTP/1.1 para facilitar a implementação e a extensibilidade, utilizando uma sintaxe de mensagens e códigos de status semelhantes (ex:"200 OK" como resposta). No entanto, ele divergiu ao manter um "estado" da sessão.</p>
+    <p>Embora a versão 1.0 (RFC 2326) tenha se tornado o padrão da indústria por quase duas décadas, as limitações em redes modernas e a necessidade de melhorias na tradução de endereços (NAT) levaram ao desenvolvimento do RTSP 2.0, publicado como RFC 7826 em 2016. Esta nova versão buscou resolver inconsistências de tempo e melhorar a eficiência das mensagens de controle.</p>
+    <p>Atualmente, o RTSP, apesar da ascensão de aplicações que utilizam o protoclo HTTP (ex: youtube e Netflix), o RTSP ainda possui muitos usos, principalmente em aplicações que funcionam com latência mínima em tempo real, como monitoramento de segurança e sistemas de transmissão industrial.</p>
+</section>
+
+<section id="caracteristicas">
+    <h2>3. Características</h2>
+    <h3>Estados da Conexão</h3>
+    <p>O RTSP é um protocolo "stateful", o que significa que o servidor mantém o rastro do estado do cliente através de uma ID de sessão, diferente do HTTP que é um protocolo sem estado:</p>
+    <ul>
+        <li><strong>Init:</strong> Conexão inicial.</li>
+        <li><strong>Ready:</strong> Após o comando SETUP, o servidor reservou recursos.</li>
+        <li><strong>Playing:</strong> O fluxo de dados está sendo enviado.</li>
+    </ul>
+    <h3>HTTP x RTSP</h3>
+    <div class="similaridades-grid">
+        <div class="sim-card">
+            <span class="header-name">Sintaxe similar</span>
+            <p>Texto, cabeçalhos, MIME</p>
+        </div>
+        <div class="sim-card">
+            <span class="header-name">Modelo Req/Resp</span>
+            <p>Request -> Response</p>
+        </div>
+        <div class="sim-card">
+            <span class="header-name">Autenticação</span>
+            <p>Basic e Digest (igual HTTP)</p>
+        </div>
+        <div class="sim-card">
+            <span class="header-name">Proxies e Caches</span>
+            <p>Suporte a intermediários</p>
+        </div>
+        <div class="sim-card">
+            <span class="header-name">URI Absoluta</span>
+            <p>rtps:// como htpp://</p>
+        </div>
+        <div class="sim-card">
+            <span class="header-name">Códigos de Status</span>
+            <p>2xx, 3xx, 4xx, 5xx</p>
+        </div>
+    </div>
+<p>Diferenças Técnicas:</p>
+
+<table class="tabela-comparativa">
+    <thead>
+        <tr>
+            <th class="header-http">HTTP</th>
+            <th class="col-prop">Propriedade</th>
+            <th class="header-rtsp">RTSP</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Stateless<span class="sub-txt">: Cada req. independente</span></td>
+            <td class="col-prop">Estado</td>
+            <td>Stateful<span class="sub-txt">: Servidor mantém sessão</span></td>
+        </tr>
+        <tr>
+            <td>In-band<span class="sub-txt">: Dados no mesmo canal</span></td>
+            <td class="col-prop">Dados</td>
+            <td>Out-of-band<span class="sub-txt">: Mídia via RTP separado</span></td>
+        </tr>
+        <tr>
+            <td>Unidirecional<span class="sub-txt">: Somente cliente &rarr; servidor</span></td>
+            <td class="col-prop">Direção</td>
+            <td>Bidirecional<span class="sub-txt">: Servidor tb. envia reqs</span></td>
+        </tr>
+        <tr>
+            <td>Transferência de documentos<span class="sub-txt">: HTML, JSON, arquivos</span></td>
+            <td class="col-prop">Propósito</td>
+            <td>Controle de streaming<span class="sub-txt">: Play, pause, seek, record</span></td>
+        </tr>
+    </tbody>
+</table>
+    <h3>Propriedades</h3>
+    <div class="method-list">
+        <ul>
+            <li><strong>Extensível: </strong> Novos métodos e parâmetros podem ser facilmente adicionados ao RTSP.</li>
+            <li><strong>Fácil de analisar: </strong> O RTSP pode ser analisado por analisadores HTTP ou MIME padrão.</li>
+            <li><strong>Seguro:</strong> O RTSP reutiliza mecanismos de segurança da web.</li>
+            <li><strong>Independente de transporte:</strong> O RTSP pode utilizar tanto protocolos não confiável como UDP ou protocolos confiáveis como o TCP, pois ele garante confiabilidade a nível de aplicação.</li>
+            <li><strong>Capacidade de múltiplos servidores:</strong> Cada fluxo de mídia em uma apresentação pode residir em um
+          servidor diferente.</li>
+            <li><strong>Controle de dispositivos de gravação:</strong>O protocolo pode controlar dispositivos de gravação e reprodução,
+          bem como dispositivos que podem alternar entre os dois modos
+          ("VCR").</li>
+            <li><strong>Separação do controle de fluxo e da iniciação de conferência:</strong> O controle de fluxo é separado do convite de um servidor de mídia para uma
+          conferência. </li>
+            <li><strong>Adequado para aplicações profissionais:</strong> O RTSP suporta precisão em nível de quadro através de carimbos de tempo SMPTE
+          para permitir edição digital remota.</li>
+            <li><strong>Neutro em relação à descrição da apresentação:</strong>O protocolo não impõe uma
+          descrição de apresentação ou formato de meta-arquivo específico e pode transmitir o tipo de
+          formato a ser usado.</li>
+            <li><strong>Compatível com proxies e firewalls:</strong> O protocolo deve ser facilmente tratado por
+          firewalls de camada de aplicação e de transporte.</li>
+            <li><strong>Compatível com HTTP:</strong> Quando apropriado, o RTSP reutiliza conceitos do HTTP, de modo que a
+          infraestrutura existente possa ser reutilizada.</li>
+            <li><strong>Controle adequado do servidor:</strong> Se um cliente pode iniciar um fluxo, ele deve ser capaz de interrompê-
+          lo.</li>
+            <li><strong>Negociação de transporte:</strong> O cliente pode negociar o método de transporte antes de
+          realmente precisar processar um fluxo de mídia contínuo.</li>
+            <li><strong>Negociação de recursos:</strong> Se recursos básicos forem desativados, deve haver um
+          mecanismo claro para o cliente determinar quais métodos não serão
+          implementados.</li>
+        </ul>
+    </div>
+    
+
+    <h3>Principais Métodos</h3>
+    <div class="method-list">
+        <ul>
+            <li><strong>OPTIONS:</strong> Verifica quais métodos o servidor suporta.</li>
+            <li><strong>DESCRIBE:</strong> Solicita a descrição da mídia (geralmente via SDP).</li>
+            <li><strong>SETUP:</strong> Define como a mídia será transportada (portas, protocolos).</li>
+            <li><strong>PLAY:</strong> Inicia a transmissão dos dados.</li>
+            <li><strong>PAUSE:</strong> Interrompe temporariamente a transmissão.</li>
+            <li><strong>TEARDOWN:</strong> Finaliza a sessão e libera recursos.</li>
+        </ul>
+    </div>
+
+    <h3>Protocolos Envolvidos</h3>
+    <p>O RTSP trabalha em conjunto com:</p>
+    <ul>
+        <li><strong>RTP (Real-time Transport Protocol):</strong> Para a entrega física dos dados de áudio/vídeo.</li>
+        <li><strong>RTCP (RTP Control Protocol):</strong> Para monitorar a qualidade do serviço (QoS).</li>
+    </ul>
+</section>
+
+<section id="arquitetura">
+    <h2>4. Arquitetura</h2>
+    <p>O RTSP opera na <strong>Camada de Aplicação</strong> do modelo OSI. Ele funciona de forma independente do protocolo de transporte (pode usar TCP ou UDP para suas mensagens de controle, embora TCP seja o padrão para garantir a entrega dos comandos).</p>
+    <p>O fluxo funciona assim: as mensagens de controle RTSP viajam por uma porta (geralmente 554), enquanto o conteúdo da mídia (RTP) viaja por canais separados. Isso permite que o controle seja mantido mesmo se houver congestionamento nos dados de vídeo.</p>
+    <h3> Sequência de mensagens </h3>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 100px 0;">
+    <div style="width: 300px; height: 500px; display: flex; justify-content: center; align-items: center;">
+        <img src="rtsp1.png" style="transform: rotate(360deg); width: 500px; height: auto; display: block;" alt="Fluxo RTSP">
+    </div>
+    </div>
+    <div class="fluxo-container">
+    <h3>Fluxo de Comunicação RTSP (Exemplo Real)</h3>
+    <table class="tabela-fluxo">
+        <thead>
+            <tr>
+                <th class="col-ordem">#</th>
+                <th class="col-direcao">Direção</th>
+                <th class="col-metodo">Método / Resposta</th>
+                <th>Descrição do Evento</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-ordem">1</td>
+                <td class="col-direcao seta-cs">C &rarr; S</td>
+                <td><span class="metodo-tag">OPTIONS</span></td>
+                <td>Cliente pergunta quais métodos o servidor suporta.</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">2</td>
+                <td class="col-direcao seta-sc">S &rarr; C</td>
+                <td><strong>200 OK</strong></td>
+                <td>Servidor responde: "Suporto OPTIONS, DESCRIBE, SETUP, PLAY".</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">3</td>
+                <td class="col-direcao seta-cs">C &rarr; S</td>
+                <td><span class="metodo-tag">DESCRIBE</span></td>
+                <td>Cliente solicita detalhes sobre a mídia (codecs, faixas).</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">4</td>
+                <td class="col-direcao seta-sc">S &rarr; C</td>
+                <td><strong>200 OK (SDP)</strong></td>
+                <td>Servidor envia o arquivo de descrição da sessão.</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">5</td>
+                <td class="col-direcao seta-cs">C &rarr; S</td>
+                <td><span class="metodo-tag">SETUP</span></td>
+                <td>Cliente escolhe a faixa e informa as portas de recepção.</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">6</td>
+                <td class="col-direcao seta-sc">S &rarr; C</td>
+                <td><strong>200 OK</strong></td>
+                <td>Servidor confirma e envia o <strong>Session ID</strong>.</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">7</td>
+                <td class="col-direcao seta-cs">C &rarr; S</td>
+                <td><span class="metodo-tag">PLAY</span></td>
+                <td>Cliente ordena o início da transmissão dos dados.</td>
+            </tr>
+            <tr class="linha-dados">
+                <td class="col-ordem">-</td>
+                <td class="col-direcao">Stream</td>
+                <td><strong>Tráfego RTP</strong></td>
+                <td>O servidor começa a enviar os pacotes de vídeo/áudio.</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">8</td>
+                <td class="col-direcao seta-cs">C &rarr; S</td>
+                <td><span class="metodo-tag">TEARDOWN</span></td>
+                <td>Cliente solicita o encerramento da sessão.</td>
+            </tr>
+            <tr>
+                <td class="col-ordem">9</td>
+                <td class="col-direcao seta-sc">S &rarr; C</td>
+                <td><strong>200 OK</strong></td>
+                <td>Servidor libera os recursos e fecha a conexão.</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    <div class="rtsp-table-container">
+    <h3 style="color: #2c3e50; border-left: 5px solid #2980b9; padding-left: 15px;">Dicionário de Cabeçalhos RTSP</h3>
+    <table class="rtsp-table">
+        <thead>
+            <tr>
+                <th>Cabeçalho</th>
+                <th>Categoria</th>
+                <th>Descrição</th>
+                <th>Exemplo Prático</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="header-name">CSeq</td>
+                <td><span class="tag-tipo">Obrigatório</span></td>
+                <td>Identificador da sequência de transação. Incrementado a cada novo pedido para emparelhar com a resposta.</td>
+                <td><code class="exemplo-code">CSeq: 2</code></td>
+            </tr>
+            <tr>
+                <td class="header-name">Session</td>
+                <td><span class="tag-tipo">Sessão</span></td>
+                <td>ID único gerado pelo servidor no comando SETUP. Essencial para manter o estado da conexão.</td>
+                <td><code class="exemplo-code">Session: 47112344</code></td>
+            </tr>
+            <tr>
+                <td class="header-name">Transport</td>
+                <td><span class="tag-tipo">Transporte</span></td>
+                <td>Define os protocolos de dados (RTP/RTCP), portas do cliente/servidor e tipo de transmissão (unicast).</td>
+                <td><code class="exemplo-code">Transport: RTP/AVP;unicast;5000-5001</code></td>
+            </tr>
+            <tr>
+                <td class="header-name">Content-Type</td>
+                <td><span class="tag-tipo">Entidade</span></td>
+                <td>Indica o formato do corpo da mensagem. Quase sempre usado com SDP em respostas DESCRIBE.</td>
+                <td><code class="exemplo-code">Content-Type: application/sdp</code></td>
+            </tr>
+            <tr>
+                <td class="header-name">Public</td>
+                <td><span class="tag-tipo">Geral</span></td>
+                <td>Lista todos os métodos que o servidor suporta. Enviado tipicamente na resposta ao comando OPTIONS.</td>
+                <td><code class="exemplo-code">Public: PLAY, PAUSE, SETUP</code></td>
+            </tr>
+            <tr>
+                <td class="header-name">Range</td>
+                <td><span class="tag-tipo">Reprodução</span></td>
+                <td>Define o ponto de início e fim da reprodução (em segundos ou tempo SMPTE).</td>
+                <td><code class="exemplo-code">Range: npt=0-30.5</code></td>
+            </tr>
+            <tr>
+                <td class="header-name">User-Agent</td>
+                <td><span class="tag-tipo">Solicitação</span></td>
+                <td>Identifica o software cliente que está a realizar o pedido.</td>
+                <td><code class="exemplo-code">User-Agent: VLC/3.0.16</code></td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    
+</section>
+
+<section id="aplicacoes">
+    <h2>5. Aplicações</h2>
+    <p>As aplicações mais comuns incluem câmeras de segurança IP (CCTV), sistemas de entretenimento de hotéis e transmissões corporativas.</p>
+    
+    <table>
+        <tr>
+            <th>Configuração de Transporte</th>
+            <th>Impacto na Latência</th>
+            <th>Segurança</th>
+        </tr>
+        <tr>
+            <td>UDP (RTP Puro)</td>
+            <td>Baixíssima latência, ideal para tempo real.</td>
+            <td>Vulnerável a perdas de pacotes.</td>
+        </tr>
+        <tr>
+            <td>TCP (Interleaved)</td>
+            <td>Latência maior devido a retransmissões.</td>
+            <td>Mais fácil de passar por Firewalls.</td>
+        </tr>
+        <tr>
+            <td>RTSPS (Over TLS)</td>
+            <td>Pequeno overhead de processamento.</td>
+            <td>Criptografia ponta a ponta.</td>
+        </tr>
+    </table>
+</section>
+
+<section id="desafios">
+    <h2>6. Desafios e Futuro</h2>
+    <p>Atualmente, o RTSP enfrenta forte concorrência do <strong>HLS (HTTP Live Streaming)</strong> e <strong>DASH</strong>, pois estes últimos utilizam portas HTTP padrão (80/443), facilitando o atravessamento de firewalls e o uso de CDNs (Content Delivery Networks).</p>
+    <p><strong>O futuro do RTSP:</strong> Ele está sendo substituído em transmissões de massa, mas continua sendo o padrão ouro para <strong>monitoramento de baixa latência</strong> e IoT. Versões modernas (RTSP 2.0) tentam resolver problemas de incompatibilidade de NAT e melhorar a segurança.</p>
+</section>
+
+<section id="conclusao">
+    <h2>7. Conclusão</h2>
+    <p>O protocolo RTSP foi fundamental para estabelecer a fundação do streaming moderno. Ele ensinou à indústria como separar o controle da transmissão e a importância da sincronização de fluxos. Sem ele, a evolução para protocolos mais robustos e baseados em web não teria a mesma base técnica sólida.</p>
+</section>
+
+<section id="perguntas">
+    <h2>8. Perguntas Frequentes (FAQ)</h2>
+    <div class="faq">
+        <p class="faq-question">O RTSP é um codec de vídeo?</p>
+        <p>Não. O RTSP é um protocolo de controle. O vídeo em si é codificado por codecs como H.264 ou H.265 e transportado via RTP.</p>
+    </div>
+    <div class="faq">
+        <p class="faq-question">Por que meu navegador não abre links rtsp:// nativamente?</p>
+        <p>Navegadores modernos priorizam protocolos baseados em HTTP. Para RTSP, geralmente é necessário um plugin ou software como o VLC Media Player.</p>
+    </div>
+</section>
+
+<section id="bibliografia">
+    <h2>9. Bibliografia</h2>
+    <ul>
+        <li>IETF. <em>RFC 2326: Real Time Streaming Protocol (RTSP)</em>. Disponível em: <a href="https://tools.ietf.org/html/rfc2326">ietf.org</a></li>
+        <li>SCHULZRINNE, H. <em>Real-Time Transport Protocol (RTP)</em>. Columbia University.</li>
+        <li>Artigos técnicos sobre streaming de baixa latência em <em>Streaming Media Magazine</em>.</li>
+    </ul>
+</section>
+
+<footer>
+    <p>&copy; 2026 - Trabalho Acadêmico sobre Protocolos de Rede</p>
+</footer>
+
+</body>
+</html>
