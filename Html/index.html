@@ -184,6 +184,56 @@
             font-size: 0.9em;
             white-space: nowrap;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px 0;
+            font-size: 14px;
+            text-align: left;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        th {
+            background-color: #2c3e50; /* Azul escuro */
+            color: white;
+            padding: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2; /* Cinza claro */
+        }
+        tr:hover {
+            background-color: #e8f5e9; /* Verde muito claro ao passar o mouse */
+        }
+        .direcao {
+            font-weight: bold;
+            color: #2e7d32; /* Verde floresta */
+            text-align: center;
+        }
+        .metodo {
+            font-weight: bold;
+            color: #1565c0; /* Azul vibrante */
+        }
+        .obrigatorio {
+            font-weight: bold;
+            color: #c62828; /* Vermelho para destaque */
+        }
+        .recomendado {
+            font-weight: bold;
+            color: #f9a825; /* Amarelo/Laranja */
+        }
+        img {
+            width: 100%;
+            height: 300px; /* Defina uma altura fixa */
+            object-fit: contain; /* Ajusta a imagem sem distorcer */
+            margin: 0; 
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -338,16 +388,84 @@
     
 
     <h3>Principais Métodos</h3>
-    <div class="method-list">
-        <ul>
-            <li><strong>OPTIONS:</strong> Verifica quais métodos o servidor suporta.</li>
-            <li><strong>DESCRIBE:</strong> Solicita a descrição da mídia (geralmente via SDP).</li>
-            <li><strong>SETUP:</strong> Define como a mídia será transportada (portas, protocolos).</li>
-            <li><strong>PLAY:</strong> Inicia a transmissão dos dados.</li>
-            <li><strong>PAUSE:</strong> Interrompe temporariamente a transmissão.</li>
-            <li><strong>TEARDOWN:</strong> Finaliza a sessão e libera recursos.</li>
-        </ul>
-    </div>
+    <table>
+    <thead>
+        <tr>
+            <th>Métodos</th>
+            <th>Direção</th>
+            <th>Significado</th>
+            <th>Uso</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="metodo">OPTIONS</td>
+            <td class="direcao">C ↔ S</td>
+            <td>Determina as capacidades do servidor (S) ou do cliente (C).</td>
+            <td><span class="obrigatorio">Obrigatório</span> (C → S)</td>
+        </tr>
+        <tr>
+            <td class="metodo">DESCRIBE</td>
+            <td class="direcao">C → S</td>
+            <td>Obtém a descrição de baixo nível do conteúdo multimídia (SDP).</td>
+            <td class="recomendado">Recomendado</td>
+        </tr>
+        <tr>
+            <td class="metodo">ANNOUNCE</td>
+            <td class="direcao">C ↔ S</td>
+            <td>Atualiza a descrição da sessão em tempo real.</td>
+            <td>Opcional</td>
+        </tr>
+        <tr>
+            <td class="metodo">SETUP</td>
+            <td class="direcao">C → S</td>
+            <td>O servidor aloca recursos para a sessão e define o transporte.</td>
+            <td class="obrigatorio">Obrigatório</td>
+        </tr>
+        <tr>
+            <td class="metodo">RECORD</td>
+            <td class="direcao">C → S</td>
+            <td>Inicia a gravação do fluxo de mídia pelo servidor.</td>
+            <td>Opcional</td>
+        </tr>
+        <tr>
+            <td class="metodo">PLAY</td>
+            <td class="direcao">C → S</td>
+            <td>Inicia a transmissão dos dados (ativa o fluxo de vídeo/áudio).</td>
+            <td class="obrigatorio">Obrigatório</td>
+        </tr>
+        <tr>
+            <td class="metodo">PAUSE</td>
+            <td class="direcao">C → S</td>
+            <td>Interrompe temporariamente a entrega sem fechar a sessão.</td>
+            <td class="recomendado">Recomendado</td>
+        </tr>
+        <tr>
+            <td class="metodo">REDIRECT</td>
+            <td class="direcao">S → C</td>
+            <td>Redireciona o cliente para conectar-se a outro servidor.</td>
+            <td>Opcional</td>
+        </tr>
+        <tr>
+            <td class="metodo">TEARDOWN</td>
+            <td class="direcao">C → S</td>
+            <td>Encerra a sessão imediatamente e libera os recursos.</td>
+            <td class="obrigatorio">Obrigatório</td>
+        </tr>
+        <tr>
+            <td class="metodo">SET_PARAMETER</td>
+            <td class="direcao">C ↔ S</td>
+            <td>Usado para modificar parâmetros do dispositivo ou do fluxo.</td>
+            <td>Opcional</td>
+        </tr>
+        <tr>
+            <td class="metodo">GET_PARAMETER</td>
+            <td class="direcao">C ↔ S</td>
+            <td>Recupera valores de parâmetros (útil para Keep-alive).</td>
+            <td>Opcional</td>
+        </tr>
+    </tbody>
+    </table>
 
     <h3>Protocolos Envolvidos</h3>
     <p>O RTSP trabalha em conjunto com:</p>
@@ -361,6 +479,22 @@
     <h2>4. Arquitetura</h2>
     <p>O RTSP opera na <strong>Camada de Aplicação</strong> do modelo OSI. Ele funciona de forma independente do protocolo de transporte (pode usar TCP ou UDP para suas mensagens de controle, embora TCP seja o padrão para garantir a entrega dos comandos).</p>
     <p>O fluxo funciona assim: as mensagens de controle RTSP viajam por uma porta (geralmente 554), enquanto o conteúdo da mídia (RTP) viaja por canais separados. Isso permite que o controle seja mantido mesmo se houver congestionamento nos dados de vídeo.</p>
+
+    <h3> Funcionamento do RTSP</h3>
+    <p> Neste exemplo, temos na prática o funcionamento do protocolo RTSP. Primeiramente o cliente pede informações sobre o Stream via HTTP, após isso começa interação do cliente e do servidor via RTSP.</p>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="width: 500px; height: auto; display: flex; justify-content: center; align-items: center;">
+        <img src="RTSP-RTP-Architecture.bniMGLAr.jpg" style="width: 100%; height: auto; display: block;" alt="Fluxo RTSP">
+    </div>
+    </div>
+    <p>A parte inicial na qual o cliente adquire informações do servidor multimídia, estabele com o servidor a alocação de recursos e o protocolo de transporte que será os dados é feita por meio de TCP por causa da necessidade de confiabilidade.</p>
+    <p>Na sequência, a etapa de transferência de dados é privilegiado uma baixa latência, logo é usado o protocolo RTP que funciona sobre conexão UDP.</p>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="width: 500px; height: auto; display: flex; justify-content: center; align-items: center;">
+        <img src="RTSP.PNG" style="width: 100%; height: auto; display: block;" alt="Fluxo RTSP">
+    </div>
+    </div>
+
     <h3> Sequência de mensagens </h3>
     <div style="display: flex; justify-content: center; align-items: center; padding: 100px 0;">
     <div style="width: 300px; height: 500px; display: flex; justify-content: center; align-items: center;">
