@@ -234,6 +234,37 @@
             margin: 0; 
             display: block;
         }
+        .similaridades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .sim-card {
+            background: #f9f9f9;
+            border-left: 4px solid #3498db; /* Azul padrão do seu site */
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .sim-card span.header-name {
+            display: block;
+            margin-bottom: 5px;font-size: 1.05em;
+        }
+
+        .sim-card p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .card-title {
+            font-weight: bold;
+            color: #2980b9; /* Mantém o azul bonito que você escolheu */
+            font-size: 1.1em;
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -289,37 +320,32 @@
         <li><strong>Playing:</strong> O fluxo de dados está sendo enviado.</li>
     </ul>
     <h3>HTTP x RTSP</h3>
-
-<div style="background-color: #1b3d2f; border: 1px solid #4CAF50; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-    <h4 style="color: #4CAF50; margin-top: 0;">Similaridades</h4>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-        <div style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
-            <strong>Sintaxe similar:</strong><br>
-            <span style="font-size: 0.85em; color: #bbb;">Texto, cabeçalhos, MIME</span>
+    <div class="similaridades-grid">
+        <div class="sim-card">
+            <span class="card-title">Sintaxe similar</span>
+            <p>Texto, cabeçalhos, MIME</p>
         </div>
-        <div style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
-            <strong>Modelo req/resp:</strong><br>
-            <span style="font-size: 0.85em; color: #bbb;">Request &rarr; Response</span>
+        <div class="sim-card">
+            <span class="card-title">Modelo Req/Resp</span>
+            <p>Request &rarr; Response</p>
         </div>
-        <div style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
-            <strong>Autenticação:</strong><br>
-            <span style="font-size: 0.85em; color: #bbb;">Basic e Digest (igual HTTP)</span>
+        <div class="sim-card">
+            <span class="card-title">Autenticação</span>
+            <p>Basic e Digest (igual HTTP)</p>
         </div>
-        <div style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
-            <strong>Proxies e caches:</strong><br>
-            <span style="font-size: 0.85em; color: #bbb;">Suporte a intermediários</span>
+        <div class="sim-card">
+            <span class="card-title">Proxies e Caches</span>
+            <p>Suporte a intermediários</p>
         </div>
-        <div style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
-            <strong>URI absoluta:</strong><br>
-            <span style="font-size: 0.85em; color: #bbb;">rtsp:// como http://</span>
+        <div class="sim-card">
+            <span class="card-title">URI Absoluta</span>
+            <p>rtsp:// como http://</p>
         </div>
-        <div style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
-            <strong>Códigos de status:</strong><br>
-            <span style="font-size: 0.85em; color: #bbb;">2xx, 3xx, 4xx, 5xx</span>
+        <div class="sim-card">
+            <span class="card-title">Códigos de Status</span>
+            <p>2xx, 3xx, 4xx, 5xx</p>
         </div>
     </div>
-</div>
-
 <p>Diferenças Técnicas:</p>
 
 <table class="tabela-comparativa">
