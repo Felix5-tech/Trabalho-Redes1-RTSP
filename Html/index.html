@@ -320,6 +320,8 @@
         <li><strong>Playing:</strong> O fluxo de dados está sendo enviado.</li>
     </ul>
     <h3>HTTP x RTSP</h3>
+    <p>O RTSP (Real-Time Streaming Protocol) foi projetado com forte inspiração no HTTP, herdando sua estrutura de requisição-resposta baseada em texto, o uso de cabeçalhos no formato chave: valor e os códigos de status numéricos — como 200 para sucesso e 404 para recurso não encontrado. Essa semelhança não é coincidência: ao aproveitar uma sintaxe já familiar a desenvolvedores e ferramentas de rede, o protocolo reduziu a curva de aprendizado e facilitou sua adoção. No entanto, enquanto o HTTP foi concebido para a transferência pontual de documentos, o RTSP foi pensado para o controle contínuo de fluxos de mídia, funcionando como um "controle remoto" sobre sessões de áudio e vídeo — daí a presença de métodos próprios como PLAY, PAUSE e TEARDOWN, que não existem no universo HTTP.</p>
+
     <div class="similaridades-grid">
         <div class="sim-card">
             <span class="card-title">Sintaxe similar</span>
@@ -346,6 +348,7 @@
             <p>2xx, 3xx, 4xx, 5xx</p>
         </div>
     </div>
+
 <p>Diferenças Técnicas:</p>
 
 <table class="tabela-comparativa">
@@ -379,7 +382,9 @@
         </tr>
     </tbody>
 </table>
-    <h3>Propriedades</h3>
+    <p> Devido a essas diferenças, o protocolo RTSP não se comunica naturalmente com o HTTP, apesar de parecidos em diversos aspectos como sintaxe, modelo cliente-servidor e o modelo requisição-resposta.</p>
+    <h3>Propriedades - Teóricas</h3>
+    <p> O RFC 2326 define um conjunto claro de propriedades idealizadas que guiam o design do RTSP.</p>
     <div class="method-list">
         <ul>
             <li><strong>Extensível: </strong> Novos métodos e parâmetros podem ser facilmente adicionados ao RTSP.</li>
@@ -411,9 +416,15 @@
           implementados.</li>
         </ul>
     </div>
-    
 
+    <h3> Propriedades - Realidade </h3>
+    <p>As propriedades listadas acima são as propriedades idealizadas pela RFC 2326, no entanto, algumas delas não se concretizaram na prática.</p>
+    <p>Embora o RTSP use uma estrutura de texto muito parecida com o HTTP, ele introduziu métodos específicos, cabeçalhos proprietários e uma lógica de estados (stateful) que o HTTP não possui. Se você tentar jogar um fluxo de dados RTSP bruto dentro de um analisador (parser) feito puramente para HTTP, ele vai quebrar e gerar erros. Na prática, os desenvolvedores precisam usar bibliotecas específicas para RTSP.</p>
+    <p>Idealmente, o RTSP é compatível com o HTML, entretanto, essa compatibilidade só é a nível de design, lógica e arquitetura. Os protocolos não são compatíveis entre si, por exemplo, não é possível abrir um link rtsp:// em um navegador web comum. Por isso que transmissões em tempo real feitas no Youtube, Twitch e Instagram, não utilizam o RTSP, normalmente eles usam os protocolos RTMP ou SRT para envio da live e protocolos HTTP, HLS e o DASH para distribuição para o público. </p>
+    <p>O protocolo deveria ser compatível com proxies e firewall, no entanto, devido ao seu comportamento de usar RTP via portas UDP aleatórias para o transporte de dados, enquanto a parte de controle que o RTSP faz acontece normalmente na porta 554, para firewalls antigos ou mal configurados, essas portas UDP brotando do nada pareciam um ataque ou uma invasão, e eles acabam bloqueando o vídeo, deixando passar apenas os comandos de texto. </p>
+    <p>O RTSP previa o uso de carimbos de tempo super precisos (padrão SMPTE) para que editores de vídeo pudessem editar arquivos remotamente direto no servidor. Na prática do mercado profissional de cinema, TV e edição, o RTSP se provou instável para essa precisão cirúrgica devido à perda de pacotes na rede. O mercado profissional migrou para transferências de arquivos brutos ou protocolos de baixa latência muito mais robustos e modernos.</p>
     <h3>Principais Métodos</h3>
+    <p>O RTSP compartilha com o HTTP o modelo de requisição-resposta e uma sintaxe de mensagens muito semelhante, mas define seus próprios métodos, pensados especificamente para o controle de fluxos de mídia em tempo real. Em vez de operações genéricas de transferência de documentos como GET e POST, o RTSP introduz métodos como DESCRIBE, SETUP, PLAY, PAUSE e TEARDOWN, cada um correspondendo a uma etapa bem definida do ciclo de vida de uma sessão de streaming — da negociação inicial até o encerramento da transmissão. </p>
     <table>
     <thead>
         <tr>
@@ -493,42 +504,94 @@
     </tbody>
     </table>
 
-    <h3>Protocolos Envolvidos</h3>
+    
+</section>
+
+<section id="arquitetura">
+    <h2>4. Arquitetura e Funcionamento</h2>
+    <p>O RTSP opera na <strong>Camada de Aplicação</strong> do modelo OSI. Ele funciona de forma independente do protocolo de transporte (pode usar TCP ou UDP para suas mensagens de controle, embora TCP seja o padrão para garantir a entrega dos comandos).</p>
+    <p>O fluxo funciona assim: as mensagens de controle RTSP viajam por uma porta (geralmente 554), enquanto o conteúdo da mídia (RTP) viaja por canais separados. Isso permite que o controle seja mantido mesmo se houver congestionamento nos dados de vídeo.</p>
+    <h3>RTP e RTCP</h3>
     <p>O RTSP trabalha em conjunto com:</p>
     <ul>
         <li><strong>RTP (Real-time Transport Protocol):</strong> Para a entrega física dos dados de áudio/vídeo.</li>
         <li><strong>RTCP (RTP Control Protocol):</strong> Para monitorar a qualidade do serviço (QoS).</li>
     </ul>
-</section>
-
-<section id="arquitetura">
-    <h2>4. Arquitetura</h2>
-    <p>O RTSP opera na <strong>Camada de Aplicação</strong> do modelo OSI. Ele funciona de forma independente do protocolo de transporte (pode usar TCP ou UDP para suas mensagens de controle, embora TCP seja o padrão para garantir a entrega dos comandos).</p>
-    <p>O fluxo funciona assim: as mensagens de controle RTSP viajam por uma porta (geralmente 554), enquanto o conteúdo da mídia (RTP) viaja por canais separados. Isso permite que o controle seja mantido mesmo se houver congestionamento nos dados de vídeo.</p>
-
+    <p> Esses protocolos funcionam sobre o protocolo de Transporte UDP, logo eles não garantem a entrega dos pacotes enviados por privilegiarem a latência em detrenimento a confiabilidade.</p>
+    <p> Uma caracterísitca importante do protocolo RTP é que ele trabalha com o conceito de sessões indenpendetes, ou seja, o áudio e o vídeo, por exemplo, são enviados em fluxos(streams) separados.</p>
+    <p> Enquanto o RTP transporta os dados de mídia em si, o RTCP distribui periodicamente relatórios com estatísticas como número de pacotes enviados, perdas, variação de atraso (jitter) e atraso de ida e volta, permitindo que os participantes adaptem sua transmissão conforme as condições da rede.</p>
+    <p> O RTCP associa o relógio de amostragem ao relógio de tempo real (wall clock NTP) através dos relatórios de remetente, permitindo que o receptor mapeie os timestamps RTP e alinhe temporalmente fluxos independentes de áudio e vídeo.</p>
+    <p> O RTP realiza a transmissão intercalada, o sinal codificado é dividido em pontos pares e ímpares e enviados em pacotes distintos para reduzir o impacto na perda de pacotes.</p>
+    <p> Além disso, o RTP pode alterar o codec em tempo real, em função de congestionamentos verificados na rede.</p>
+    <p> O RTCP resolve problemas de escala em sessões com muitos participantes limitando seu tráfego a 5% da largura de banda total da sessão. A frequência de envio dos relatórios RTCP diminui conforme o número de participantes aumenta, evitando que as mensagens de controle congestionem a rede.</p>
+    
     <h3> Funcionamento do RTSP</h3>
-    <p> Neste exemplo, temos na prática o funcionamento do protocolo RTSP. Primeiramente o cliente pede informações sobre o Stream via HTTP, após isso começa interação do cliente e do servidor via RTSP.</p>
+    <p> Um exemplo real são as câmeras IP modernas, que possuem um pequeno servidor web embutido. Para que a transmissão aconteça, o cliente envia uma requisição HTTP a esse servidor pedindo o arquivo de metadados da apresentação, que descreve o stream disponível — incluindo informações como codec, resolução e, crucialmente, o endereço rtsp:// que o media player deverá usar para iniciar a sessão de streaming.</p>
     <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
     <div style="width: 500px; height: auto; display: flex; justify-content: center; align-items: center;">
         <img src="RTSP-RTP-Architecture.bniMGLAr.jpg" style="width: 100%; height: auto; display: block;" alt="Fluxo RTSP">
     </div>
     </div>
-    <p>A parte inicial na qual o cliente adquire informações do servidor multimídia, estabele com o servidor a alocação de recursos e o protocolo de transporte que será os dados é feita por meio de TCP por causa da necessidade de confiabilidade.</p>
-    <p>Na sequência, a etapa de transferência de dados é privilegiado uma baixa latência, logo é usado o protocolo RTP que funciona sobre conexão UDP.</p>
+    <p> Neste exemplo, temos na prática o funcionamento do protocolo RTSP. O fluxo começa quando o navegador web solicita ao servidor HTTP um arquivo de metadados, que contém informações sobre os fluxos de mídia disponíveis, como endereços, codecs e parâmetros de transporte. Esse arquivo é repassado ao media player, que então assume o controle da sessão.</p>
     <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
     <div style="width: 500px; height: auto; display: flex; justify-content: center; align-items: center;">
         <img src="RTSP.PNG" style="width: 100%; height: auto; display: block;" alt="Fluxo RTSP">
     </div>
     </div>
+    <p> A partir desse ponto, o media player passa a se comunicar diretamente com o servidor de mídia via RTSP, na porta padrão 554. Essa fase de sinalização — que envolve a negociação de recursos, a escolha do protocolo de transporte e o controle da sessão — é conduzida sobre TCP, pois exige entrega confiável e ordenada das mensagens. É nessa etapa que ocorrem as trocas de comandos como SETUP, PLAY, PAUSE e TEARDOWN, cada um seguido de uma resposta do servidor confirmando ou recusando a operação.</p>
+    <p> Uma vez estabelecida a sessão, a transferência efetiva do conteúdo audiovisual passa a ocorrer via RTP e RTCP sobre UDP. Essa escolha é intencional: como a mídia em tempo real tolera melhor a perda ocasional de pacotes do que o atraso causado por retransmissões, o UDP oferece a baixa latência necessária para uma reprodução fluida. O cliente, por sua vez, seleciona uma porta UDP local para receber esses fluxos, completando assim a separação clara entre o plano de controle (RTSP/TCP) e o plano de dados (RTP/UDP).</p>
 
     <h3> Sequência de mensagens </h3>
+    <p>O diagrama a seguir ilustra a sequência completa de mensagens de uma sessão RTSP, dividida em três fases bem definidas. </p>
     <div style="display: flex; justify-content: center; align-items: center; padding: 100px 0;">
     <div style="width: 300px; height: 500px; display: flex; justify-content: center; align-items: center;">
         <img src="rtsp1.png" style="transform: rotate(360deg); width: 500px; height: auto; display: block;" alt="Fluxo RTSP">
     </div>
     </div>
+    <p>A fase de setup da sessão inicia com o cliente enviando um OPTIONS perguntando ao servidor quais métodos estão disponíveis, e o servidor confirma que o vídeo está acessível. </p>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="width: 1000px; height: auto; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <p style="font-weight: bold; margin-bottom: 8px;"> Exemplo de Resposta ao OPTIONS</p>
+        <img src="options.PNG" style="width: 100%; height: auto; display: block;" alt="Resposta OPTIONS">
+    </div>
+    </div>
+    <p>O campo Public na resposta lista todas as operações que o servidor suporta. Além disso, o servidor se identifica no campo Session.</p>
+    <p> Em seguida, o cliente envia um DESCRIBE solicitando a descrição do stream, e o servidor responde com as informações via SDP — codec, resolução, endereços e trilhas disponíveis.</p>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="width: 1000px; height: auto; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <p style="font-weight: bold; margin-bottom: 8px;"> Exemplo de Resposta ao DESCRIBE</p>
+        <img src="describe.png" style="width: 100%; height: auto; display: block;" alt="Resposta DESCRIBE">
+    </div>
+    </div>
+    <p>O corpo da resposta é um arquivo SDP (Session Description Protocol) que descreve o stream disponível. Nele, seguindo o exemplo, m=video 0 RTP/AVP 96 indica que se trata de um stream de vídeo usando o perfil RTP/AVP com payload tipo 96, enquanto a=rtpmap:96 H264/90000 especifica que esse payload corresponde ao codec H.264 com clock de 90kHz — valor padrão para vídeo. O campo a=control informa a URL exata que o cliente deverá usar no próximo comando SETUP para configurar essa trilha.</p>
+    <p>Note que no diagrama há dois SETUP (CSeq=3 e CSeq=4), um para cada trilha — o que acontece quando a apresentação possui, por exemplo, uma trilha de vídeo e uma de áudio separadas, cada uma precisando ser configurada individualmente. </p>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="width: 1000px; height: auto; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <p style="font-weight: bold; margin-bottom: 8px;"> Exemplo de Resposta ao SETUP</p>
+        <img src="setup.png" style="width: 100%; height: auto; display: block;" alt="Resposta SETUP">
+    </div>
+    </div>
+    <p>A resposta do servidor confirma a negociação de transporte com todos os parâmetros necessários para a transmissão. O Session: 33bdd078773e4e8b9cc0c180bbb5f552 é o identificador único da sessão, que deverá ser incluído em todos os comandos seguintes — funciona como um "token" que o servidor usa para reconhecer a qual sessão cada requisição pertence. O timeout=60 indica que a sessão será encerrada automaticamente caso o servidor não receba nenhuma mensagem do cliente por 60 segundos. Já o server_port=8000-8001 informa as portas UDP que o servidor usará para enviar os pacotes RTP e RTCP respectivamente, enquanto o ssrc=1BD0C2C1 é o identificador do fluxo RTP.</p>
+    <p> Por fim, o cliente envia o PLAY e o servidor confirma que está pronto para transmitir.</p>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="width: 1000px; height: auto; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <p style="font-weight: bold; margin-bottom: 8px;"> Exemplo de Resposta ao PLAY</p>
+        <img src="play.png" style="width: 100%; height: auto; display: block;" alt="Resposta PLAY">
+    </div>
+    </div>
+    <p>A resposta traz o campo RTP-Info, que fornece ao cliente o número de sequência inicial (seq=17134) e o timestamp RTP inicial (rtptime=523767234) do primeiro pacote que será enviado. Essas informações são essenciais para que o cliente consiga detectar pacotes perdidos e sincronizar corretamente a reprodução desde o primeiro quadro.</p>
+    <p>A fase de transferência de dados começa imediatamente após o PLAY. Os pacotes RTP passam a ser enviados continuamente via UDP do servidor para o cliente — ao contrário de toda a fase anterior, que ocorreu via TCP. Essa transferência continua indefinidamente até que o cliente decida encerrar.</p>
+    <p>A fase de encerramento ocorre quando o cliente envia o TEARDOWN (CSeq=2+n+1), sinalizando que deseja fechar a sessão, e o servidor confirma o encerramento. O CSeq=2+n+1 no diagrama indica que o número de sequência depende de quantos SETUPs foram feitos.</p>
+    <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="width: 1000px; height: auto; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <p style="font-weight: bold; margin-bottom: 8px;"> Exemplo de Resposta ao TEARDOWN</p>
+        <img src="teardown.PNG" style="width: 100%; height: auto; display: block;" alt="Resposta TEARDOWMN">
+    </div>
+    </div>
+    <p>A resposta minimalista do servidor ao TEARDOWN — contendo apenas o código 200 OK e o CSeq correspondente — reflete que a sessão foi encerrada com sucesso e todos os recursos alocados no servidor foram liberados. Note que o identificador de sessão não é retornado, pois ela deixou de existir. A partir desse momento, qualquer tentativa de enviar comandos com o mesmo Session ID resultaria em erro 454 Session Not Found.</p>
+
     <div class="fluxo-container">
-    <h3>Fluxo de Comunicação RTSP (Exemplo Real)</h3>
+    <h3>Resumo do Fluxo de Comunicação RTSP </h3>
     <table class="tabela-fluxo">
         <thead>
             <tr>
