@@ -293,7 +293,7 @@
 <section id="intro">
     <h2>1. Introdução</h2>
     <p>O <strong>RTSP (Real Time Streaming Protocol)</strong> é um protocolo de nível de aplicação projetado para controlar a entrega de dados com propriedades de tempo real. Ao contrário do que muitos pensam, o RTSP não transmite os dados de mídia em si, mas atua como um "controle remoto" para o servidor de mídia.</p>
-    <p>Sua necessidade surgiu da demanda por interatividade em transmissões online, permitindo que o usuário controle o fluxo (reproduzir, pausar, parar) de forma eficiente, contextualizando-se em sistemas de vigilância, videoconferências e entretenimento.</p>
+    <p>Definido pelo IETF (Internet Engineering Task Force) na especificação RFC2326, o RTSP, tornou-se amplamente utilizado em sistemas de vigilância, videomonitoramento, transmissão ao vivo, videoconferências e plataformas de mídia digital. Nessas aplicações o seu trabalho é fornecer mecanismos de controle semelhantes aos comandos encontrados em aparelhos de mídia convencionais, como play, pause, stop, record e seek, permitindo que o usuário controle a reprodução do conteúdo em tempo real.</p>
     <p>Diferente de outros protocolos como o HTTP, que é otimizado para a entrega de documentos e arquivos estáticos, o RTSP foi criado para lidar com fluxos contínuos onde o controle da transmissão (como pausar ou avançar) é essencial. Ele atua em conjunto com outros protocolos, como o RTP (Real-time Transport Protocol) para o transporte do conteúdo e o SDP (Session Description Protocol) para a descrição das capacidades de mídia. Neste trabalho, exploramos as características e possíveis usos atuais deste protocolo, além de sua arquitetura e história.</p>
 </section>
 
@@ -302,12 +302,12 @@
     <p>O RTSP foi proposto originalmente pela <strong>RealNetworks, Netscape e Universidade de Columbia</strong> em 1996, culminando na RFC 2326 em 1998.</p>
     <p><strong>Comparação com protocolos da época:</strong></p>
     <ul>
-        <li><strong>HTTP:</strong> Na época, o HTTP era puramente para transferência de arquivos estáticos. Não possuía mecanismos para manter estados de sessão de mídia ou lidar com latência de tempo real.</li>
-        <li><strong>RTMP:</strong> Desenvolvido pela Macromedia (Adobe), era proprietário. O RTSP surgiu como uma alternativa aberta e padronizada pela IETF.</li>
+        <li><strong>HTTP:</strong> Na época, o HTTP era utilizado principalmente para transferência de arquivos estáticos e páginas web, sem mecanismos para controle contínuo de mídia, gerenciamento de sessões ou sincronização temporal. Dessa forma, ele não era apropriado para aplicações de streaming interativo.</li>
+        <li><strong>RTMP:</strong> Ao mesmo tempo, surgiam soluções proprietárias voltadas para transmissão multimídia, como o RTMP (Real-Time Messaging Protocol), desenvolvido posteriormente pela Macromedia(Adobe). Diferentemente dessas soluções fechadas, o RTSP foi criado como um protocolo aberto e padronizado.</li>
     </ul>
     <p>Apesar de distintos, o RTSP possui influência de ambos os protocolos, um exemplo seria o design do RTSP, que foi fortemente inspirado no HTTP/1.1 para facilitar a implementação e a extensibilidade, utilizando uma sintaxe de mensagens e códigos de status semelhantes (ex:"200 OK" como resposta). No entanto, ele divergiu ao manter um "estado" da sessão.</p>
-    <p>Embora a versão 1.0 (RFC 2326) tenha se tornado o padrão da indústria por quase duas décadas, as limitações em redes modernas e a necessidade de melhorias na tradução de endereços (NAT) levaram ao desenvolvimento do RTSP 2.0, publicado como RFC 7826 em 2016. Esta nova versão buscou resolver inconsistências de tempo e melhorar a eficiência das mensagens de controle.</p>
-    <p>Atualmente, o RTSP, apesar da ascensão de aplicações que utilizam o protoclo HTTP (ex: youtube e Netflix), o RTSP ainda possui muitos usos, principalmente em aplicações que funcionam com latência mínima em tempo real, como monitoramento de segurança e sistemas de transmissão industrial.</p>
+    <p>Com o crescimento das redes modernas e o aumento do uso de dispositivos atrás de NATs(Network Address Translation), a versão RTSP 1.0 começou a apresentar limitações estruturais, especialmente relacionadas à sincronização temporal, persistência de conexões e ambiguidades na especificação original. Para solucionar esses problemas, foi desenvolvida uma nova versão do protocolo, o RTSP 2.0, publicada em 2016. Essa atualização trouxe melhorias significativas na eficiência das mensagens, no gerenciamento de conexões persistentes, na compatibilidade com redes modernas e na clareza da especificação.</p>
+    <p>Atualmente, o RTSP, apesar da ascensão de aplicações que utilizam o protoclo HTTP (ex: Youtube e Netflix), o RTSP ainda possui muitos usos, principalmente em aplicações que funcionam com latência mínima em tempo real, como monitoramento de segurança e sistemas de transmissão industrial.</p>
 </section>
 
 <section id="caracteristicas">
