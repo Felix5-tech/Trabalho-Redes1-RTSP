@@ -556,15 +556,73 @@
     </div>
     </div>
     <p>O campo Public na resposta lista todas as operações que o servidor suporta. Além disso, o servidor se identifica no campo Session.</p>
-    <p> Em seguida, o cliente envia um DESCRIBE solicitando a descrição do stream, e o servidor responde com as informações via SDP — codec, resolução, endereços e trilhas disponíveis.</p>
+    <p> Em seguida, o cliente envia um DESCRIBE solicitando a descrição do stream, e o servidor responde com as informações via SDP (Session Description Protocol)  — codec, resolução, endereços e trilhas disponíveis.</p>
     <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
     <div style="width: 1000px; height: auto; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <p style="font-weight: bold; margin-bottom: 8px;"> Exemplo de Resposta ao DESCRIBE</p>
         <img src="describe.png" style="width: 100%; height: auto; display: block;" alt="Resposta DESCRIBE">
     </div>
     </div>
-    <p>O corpo da resposta é um arquivo SDP (Session Description Protocol) que descreve o stream disponível. Nele, seguindo o exemplo, m=video 0 RTP/AVP 96 indica que se trata de um stream de vídeo usando o perfil RTP/AVP com payload tipo 96, enquanto a=rtpmap:96 H264/90000 especifica que esse payload corresponde ao codec H.264 com clock de 90kHz — valor padrão para vídeo. O campo a=control informa a URL exata que o cliente deverá usar no próximo comando SETUP para configurar essa trilha.</p>
+    <p>O corpo da resposta é um arquivo SDP que descreve o stream disponível. Os cabeçalhos desse protocolo retornam as seguintes informações:</p>
+    <table border="1" cellpadding="8" style="border-collapse: collapse; font-family: Arial, sans-serif; width: 100%;">
+  <thead>
+    <tr style="background-color: #f2f2f2; text-align: left;">
+      <th style="width: 20%;">Campo / Cabeçalho</th>
+      <th style="width: 35%;">Valor no Exemplo</th>
+      <th style="width: 45%;">Descrição / Significado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>v=</strong></td>
+      <td><code>0</code></td>
+      <td><strong>Versão do Protocolo:</strong> Especifica a versão do SDP. Atualmente, o padrão é sempre 0.</td>
+    </tr>
+    <tr>
+      <td><strong>o=</strong></td>
+      <td><code>- 0 0 IN IP4 127.0.0.1</code></td>
+      <td><strong>Origem (Originator):</strong> Define o criador da sessão. Contém o nome de usuário (<code>-</code> significa não especificado), ID da sessão (<code>0</code>), versão da sessão (<code>0</code>), tipo de rede (<code>IN</code> para Internet), tipo de endereço (<code>IP4</code>) e o endereço IP de quem originou (<code>127.0.0.1</code>).</td>
+    </tr>
+    <tr>
+      <td><strong>s=</strong></td>
+      <td><code>No Name</code></td>
+      <td><strong>Nome da Sessão:</strong> Um nome textual para identificar a transmissão ou conferência.</td>
+    </tr>
+    <tr>
+      <td><strong>c=</strong></td>
+      <td><code>IN IP4 0.0.0.0</code></td>
+      <td><strong>Informação de Conexão:</strong> Define a rede (<code>IN</code>), o tipo de IP (<code>IP4</code>) e o endereço de destino para a mídia. O IP <code>0.0.0.0</code> geralmente indica que a mídia ainda não foi direcionada a um IP específico ou está em modo de espera/escuta geral.</td>
+    </tr>
+    <tr>
+      <td><strong>t=</strong></td>
+      <td><code>0 0</code></td>
+      <td><strong>Tempo Ativo:</strong> Define o horário de início e término da sessão (em formato timestamp NTP). <code>0 0</code> significa que a sessão é permanente ou não possui um horário estrito de início/fim definido.</td>
+    </tr>
+    <tr>
+      <td><strong>m=</strong></td>
+      <td><code>video 0 RTP/AVP 96</code></td>
+      <td><strong>Descrição da Mídia:</strong> Indica o tipo de mídia (<code>video</code>), a porta de transporte (<code>0</code> significa que a porta será negociada dinamicamente via RTSP), o protocolo de transporte (<code>RTP/AVP</code>) e o formato do payload (<code>96</code>, que é um identificador dinâmico).</td>
+    </tr>
+    <tr>
+      <td><strong>a=control:</strong></td>
+      <td><code>rtsp://localhost:8554/stream/trackID=0</code></td>
+      <td><strong>Atributo de Controle:</strong> Fornece a URL de controle RTSP específica para esta faixa (track) de mídia. Usada para comandos como PLAY, PAUSE e TEARDOWN nesta faixa específica.</td>
+    </tr>
+    <tr>
+      <td><strong>a=rtpmap:</strong></td>
+      <td><code>96 H264/90000</code></td>
+      <td><strong>Mapeamento de Codificação:</strong> Vincula o ID do payload (<code>96</code>) ao codec de vídeo correspondente (<code>H264</code>) e à frequência de clock utilizada para a sincronização do tempo (<code>90000</code> Hz, padrão para vídeo).</td>
+    </tr>
+    <tr>
+      <td><strong>a=fmtp:</strong></td>
+      <td><code>96 packetization-mode=1; profile-level-id=F4001E; ...</code></td>
+      <td><strong>Parâmetros de Formato:</strong> Passa configurações específicas adicionais para o codec informado (ID <code>96</code>). Aqui define o modo de empacotamento, o perfil/nível do H.264 e os dados de configuração essenciais (SPS e PPS codificados em Base64 na string <code>sprop-parameter-sets</code>) para que o player consiga decodificar o vídeo imediatamente.</td>
+    </tr>
+  </tbody>
+    </table>
+    <p>No exemplo, o m=video 0 RTP/AVP 96 indica que se trata de um stream de vídeo usando o perfil RTP/AVP com payload tipo 96, enquanto a=rtpmap:96 H264/90000 especifica que esse payload corresponde ao codec H.264 com clock de 90kHz — valor padrão para vídeo. O campo a=control informa a URL exata que o cliente deverá usar no próximo comando SETUP para configurar essa trilha.</p></p>
     <p>Note que no diagrama há dois SETUP (CSeq=3 e CSeq=4), um para cada trilha — o que acontece quando a apresentação possui, por exemplo, uma trilha de vídeo e uma de áudio separadas, cada uma precisando ser configurada individualmente. </p>
+    <p>Com a url específica adquirida na resposta do Describe, envia-se um SETUP para o servidor contendo os protocolos de transportes a serem utilizados, o tipo de transmissão(unicast ou multicast) e as portas do cliente a serem utilizadas para a transmissão de dados.</p>
     <div style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
     <div style="width: 1000px; height: auto; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <p style="font-weight: bold; margin-bottom: 8px;"> Exemplo de Resposta ao SETUP</p>
@@ -647,7 +705,7 @@
             <tr class="linha-dados">
                 <td class="col-ordem">-</td>
                 <td class="col-direcao">Stream</td>
-                <td><strong>Tráfego RTP</strong></td>
+                <td><strong>Tráfego RTP/RTCP</strong></td>
                 <td>O servidor começa a enviar os pacotes de vídeo/áudio.</td>
             </tr>
             <tr>
@@ -786,7 +844,7 @@
 </section>
 
 <footer>
-    <p>&copy; 2026 - Trabalho Acadêmico sobre Protocolos de Rede</p>
+    <p>&copy; 2026 - Trabalho Acadêmico sobre RTSP (Real Time Streaming Protocol)</p>
 </footer>
 
 </body>
