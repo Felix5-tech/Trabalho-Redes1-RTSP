@@ -306,6 +306,7 @@
         <li><strong>RTMP:</strong> Ao mesmo tempo, surgiam soluções proprietárias voltadas para transmissão multimídia, como o RTMP (Real-Time Messaging Protocol), desenvolvido posteriormente pela Macromedia(Adobe). Diferentemente dessas soluções fechadas, o RTSP foi criado como um protocolo aberto e padronizado.</li>
     </ul>
     <p>Apesar de distintos, o RTSP possui influência de ambos os protocolos, um exemplo seria o design do RTSP, que foi fortemente inspirado no HTTP/1.1 para facilitar a implementação e a extensibilidade, utilizando uma sintaxe de mensagens e códigos de status semelhantes (ex:"200 OK" como resposta). No entanto, ele divergiu ao manter um "estado" da sessão.</p>
+    <p>Além disso, apesar de que o RTSP ter sido feito fortemente baseado no HTTP, ele não foi projetado para a web moderna, na qual, deve-se ao fato que seu foco original era o controle de hardware de ponta (como câmeras CFTV) e o uso em redes locais corporativas.</p>
     <p>Com o crescimento das redes modernas e o aumento do uso de dispositivos atrás de NATs(Network Address Translation), a versão RTSP 1.0 começou a apresentar limitações estruturais, especialmente relacionadas à sincronização temporal, persistência de conexões e ambiguidades na especificação original. Para solucionar esses problemas, foi desenvolvida uma nova versão do protocolo, o RTSP 2.0, publicada em 2016. Essa atualização trouxe melhorias significativas na eficiência das mensagens, no gerenciamento de conexões persistentes, na compatibilidade com redes modernas e na clareza da especificação.</p>
     <p>Atualmente, o RTSP, apesar da ascensão de aplicações que utilizam o protoclo HTTP (ex: Youtube e Netflix), o RTSP ainda possui muitos usos, principalmente em aplicações que funcionam com latência mínima em tempo real, como monitoramento de segurança e sistemas de transmissão industrial.</p>
 </section>
@@ -810,9 +811,7 @@
         </tr>
     </table>
 
-    <p>
-    Além dos casos citados, o RTSP é amplamente utilizado em:
-  </p>
+    <p>Além dos casos citados, o RTSP é amplamente utilizado em:</p>
  
   <ul>
     <li><strong>Sistemas de videoconferência corporativa</strong> — controle preciso de câmeras PTZ (Pan-Tilt-Zoom) em salas de reunião.</li>
@@ -840,6 +839,43 @@
   </ul>
 
   <p> Neste cenário, por causa dessas limitações, em transmissões ao vivo voltadas mais ao entretenimento como no Youtube, Twitch e Instagram, utilizam-se outros protocolos como o RTMP para ingestão da live para o servidor e os protocolos HLS e DASH para distribuição para o público.</p>
+
+  <h3> Criptografia RTSP e RTSPS </h3>
+  <p>A segurança na transmissão de streaming de mídia evoluiu significativamente com a necessidade de proteger fluxos de vídeo e áudio contra interceptações. O protocolo RTSP 2.0 (RFC 7826) introduziu oficialmente o prefixo de URL <code>rtsps://</code>, padronizando os mecanismos de criptografia para mensagens de comando e fluxos de dados de mídia (RTP). Muitos desses métodos de proteção foram retroalimentados e incorporados também ao RTSP 1.0 (RFC 2326), permitindo que clientes e servidores estabeleçam comunicações seguras de forma nativa.</p>
+  <p>O método principal utiliza uma conexão direta via canal TLS, operando por padrão na porta 322 reservada pela IANA. Sob essa arquitetura de segurança, os dados de vídeo e áudio podem ser transmitidos de duas formas distintas: intercalados diretamente com os comandos RTSP dentro do próprio túnel TCP criptografado pelo TLS, ou enviados em paralelo via UDP ou Multicast-UDP, utilizando o protocolo Secure RTP (SRTP) para a criptografia específica do conteúdo de mídia.</p>
+
+  <p>Como alternativa para cenários com restrições severas de firewall, o método RTSP sobre HTTPS realiza o intercalamento dos dados de mídia RTP dentro da própria conexão de comando RTSP e encapsula todo o tráfego por meio de um par de conexões HTTPS criptografadas, utilizando a porta padrão 443. Atualmente, essas tecnologias são amplamente adotadas pela indústria de segurança eletrônica, com implementação ativa em câmeras IP ONVIF de fabricantes como Axis e Bosch, além de ferramentas de software consagradas como FFmpeg, GStreamer, MediaMTX e Ant Media Server.</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 14px; text-align: left;">
+        <thead>
+            <tr style="background-color: #2b6cb0; color: white;">
+                <th style="padding: 12px; border: 1px solid #2b6cb0;">Método de Criptografia</th>
+                <th style="padding: 12px; border: 1px solid #2b6cb0;">Porta Padrão</th>
+                <th style="padding: 12px; border: 1px solid #2b6cb0;">Mecanismo de Transporte de Mídia</th>
+                <th style="padding: 12px; border: 1px solid #2b6cb0;">Protocolos Utilizados</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="background-color: #ffffff;">
+                <td style="padding: 12px; border: 1px solid #e2e8f0; font-weight: bold;">URL RTSPS (TCP)</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">322 (IANA)</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">Vídeo e áudio intercalados com os comandos de controle no mesmo canal.</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;"><code>RTSP + TLS + TCP</code></td>
+            </tr>
+            <tr style="background-color: #f7fafc;">
+                <td style="padding: 12px; border: 1px solid #e2e8f0; font-weight: bold;">URL RTSPS (UDP / Multicast)</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">322 (IANA)</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">Controle criptografado via TLS e fluxos de mídia transmitidos em paralelo de forma segura.</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;"><code>RTSP + TLS</code> (Controle)<br><code>SRTP + UDP</code> (Mídia)</td>
+            </tr>
+            <tr style="background-color: #ffffff;">
+                <td style="padding: 12px; border: 1px solid #e2e8f0; font-weight: bold;">RTSP sobre HTTPS</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">443</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">Dados de mídia intercalados na conexão RTSP, totalmente encapsulados em HTTPS.</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;"><code>RTSP + HTTPS + TCP</code></td>
+            </tr>
+        </tbody>
+    </table>
 
   <h3>Protocolos alternativos ao RTSP e RTP/RTCP</h3>
   <p>
@@ -878,6 +914,8 @@
     e serviços de streaming sob demanda que precisam de maior flexibilidade e controle sobre 
     a entrega do conteúdo.
   </p>
+
+</div>
     
 </section>
 
@@ -989,26 +1027,10 @@
         <li>IETF. <em> SDP: Session Description Protocol</em>. Disponível em: <a href="https://tools.ietf.org/html/rfc4566">ietf.org</a> Acesso em: 31 Maio 2026. </li>
         <li>K2 PONTO. <em> Protocolos de streaming ao vivo: RTMP vs. HLS vs. WebRTC</em>. Disponível em: <a href="https://k2ponto.com.br/blog/protocolos-de-streaming-ao-vivo/.">k2ponto</a> Acesso em: 1 jun. 2026.</li>
         <li>KUROSE, James F.; ROSS, Keith W. <em> Redes de computadores e a Internet: uma abordagem top-down.</em> 8. ed. São Paulo: Pearson, 2021.</li>
-        <li> RF WIRELESS WORLD. <strong>RTP vs RTCP vs RTSP: Key Differences Explained.</strong> Disponível em: 
-        <a href="https://www.rfwireless-world.com/terminology/rtp-vs-rtcp-vs-rtsp" target="_blank">
-            https://www.rfwireless-world.com/terminology/rtp-vs-rtcp-vs-rtsp
-        </a>. Acesso em: 23 Maio 2026.
-        </li>
-
-        <li>
-            TONMIND TECHNOLOGY. <strong>RTSP: Protocolo de transmissão em tempo real.</strong> 
-            Xiamen: Xiamen Tonmind Technology Co., Ltd, [s.d.]. Disponível em: 
-            <a href="https://pt.tonmind.com/blog/rtsp-real-time-streaming-protocol_b23" target="_blank">
-                https://pt.tonmind.com/blog/rtsp-real-time-streaming-protocol_b23
-            </a>. Acesso em: 23 Maio 2026.
-        </li>
-
-        <li>
-            IRAINSA. <strong>Análise do protocolo RTSP.</strong> CSDN Blog, 2023. Disponível em: 
-            <a href="https://blog.csdn.net/irainsa/article/details/129846364" target="_blank">
-                https://blog.csdn.net/irainsa/article/details/129846364
-            </a>. Acesso em: 23 Maio 2026.
-        </li>
+        <li> RF WIRELESS WORLD. <strong>RTP vs RTCP vs RTSP: Key Differences Explained.</strong> Disponível em: <a href="https://www.rfwireless-world.com/terminology/rtp-vs-rtcp-vs-rtsp" target="_blank"> https://www.rfwireless-world.com/terminology/rtp-vs-rtcp-vs-rtsp</a>. Acesso em: 23 Maio 2026.</li>
+        <li>TONMIND TECHNOLOGY. <strong>RTSP: Protocolo de transmissão em tempo real.</strong> Xiamen: Xiamen Tonmind Technology Co., Ltd, [s.d.]. Disponível em: <a href="https://pt.tonmind.com/blog/rtsp-real-time-streaming-protocol_b23" target="_blank"> https://pt.tonmind.com/blog/rtsp-real-time-streaming-protocol_b23</a>. Acesso em: 23 Maio 2026.</li>
+        <li>IRAINSA. <strong>Análise do protocolo RTSP.</strong> CSDN Blog, 2023. Disponível em: <a href="https://blog.csdn.net/irainsa/article/details/129846364" target="_blank"> https://blog.csdn.net/irainsa/article/details/129846364</a>. Acesso em: 23 Maio 2026.</li>
+        <li>Wikipedia contributors. <strong>Real-Time Streaming Protocol.</strong> In Wikipedia, The Free Encyclopedia. Disponível em: <a href="https://en.wikipedia.org/wiki/Real-Time_Streaming_Protocol" target="_blank">https://en.wikipedia.org/wiki/Real-Time_Streaming_Protocol</a>. Acesso em: 1 jun 2026.</li>
     </ul>
 </section>
 
